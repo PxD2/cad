@@ -1,0 +1,252 @@
+export type SolidKind =
+  | "plate"
+  | "spur"
+  | "herringbone"
+  | "rack"
+  | "pulley"
+  | "bearing"
+  | "coupling"
+  | "bracket"
+  | "standoff"
+  | "knob"
+  | "nema"
+  | "compound"
+  | "bevel"
+  | "worm"
+  | "washer"
+  | "nut"
+  | "bushing"
+  | "hinge"
+  | "tslot"
+  | "flange"
+  | "bolt"
+  | "cube"
+  | "box"
+  | "hook"
+  | "clip"
+  | "stand"
+  | "opener"
+  | "disk"
+  | "card"
+  | "bin"
+  | "grid"
+  | "grill"
+  | "wrench"
+  | "comb"
+  | "hull"
+  | "spinner"
+  | "ruler"
+  | "case"
+  | "xyzcube"
+  | "collar"
+  | "flexcoup"
+  | "idler"
+  | "beltclip"
+  | "gopro"
+  | "picam"
+  | "arm"
+  | "nameplate"
+  | "mushroom"
+  | "headhook"
+  | "spool"
+  | "snapbox"
+  | "ledclip";
+
+export const SOLID_KINDS: SolidKind[] = [
+  "plate",
+  "spur",
+  "herringbone",
+  "rack",
+  "pulley",
+  "bearing",
+  "coupling",
+  "bracket",
+  "standoff",
+  "knob",
+  "nema",
+  "compound",
+  "bevel",
+  "worm",
+  "washer",
+  "nut",
+  "bushing",
+  "hinge",
+  "tslot",
+  "flange",
+  "bolt",
+  "cube",
+  "box",
+  "hook",
+  "clip",
+  "stand",
+  "opener",
+  "disk",
+  "card",
+  "bin",
+  "grid",
+  "grill",
+  "wrench",
+  "comb",
+  "hull",
+  "spinner",
+  "ruler",
+  "case",
+  "xyzcube",
+  "collar",
+  "flexcoup",
+  "idler",
+  "beltclip",
+  "gopro",
+  "picam",
+  "arm",
+  "nameplate",
+  "mushroom",
+  "headhook",
+  "spool",
+  "snapbox",
+  "ledclip",
+];
+
+export type SolidSpec = {
+  kind: SolidKind;
+  teeth?: number;
+  teeth2?: number;
+  module?: number;
+  bore?: number;
+  pitch?: number;
+  od?: number;
+  id?: number;
+  width?: number;
+  length?: number;
+  height?: number;
+  flutes?: number;
+  hole?: number;
+  a?: number;
+  b?: number;
+  t?: number;
+  size?: number;
+};
+
+export function envelopeOf(s: SolidSpec): { width: number; height: number; thick: number } {
+  if (s.kind === "spur" || s.kind === "herringbone" || s.kind === "bevel") {
+    const z = s.teeth ?? 20;
+    const m = s.module ?? 2;
+    const d = (z + 2) * m;
+    return { width: d, height: d, thick: s.t ?? 8 };
+  }
+  if (s.kind === "compound") {
+    const m = s.module ?? 2;
+    const z = Math.max(s.teeth ?? 20, s.teeth2 ?? 40);
+    const d = (z + 2) * m;
+    return { width: d, height: d, thick: s.t ?? 16 };
+  }
+  if (s.kind === "worm") {
+    const m = s.module ?? 2;
+    const z = s.teeth ?? 2;
+    const d = (z + 2) * m + 8;
+    return { width: d, height: d, thick: s.length ?? 24 };
+  }
+  if (s.kind === "rack") {
+    const z = s.teeth ?? 16;
+    const m = s.module ?? 2;
+    return { width: z * Math.PI * m + 8, height: 2.5 * m + (s.t ?? 8), thick: s.t ?? 8 };
+  }
+  if (s.kind === "pulley" || s.kind === "idler") {
+    const z = s.teeth ?? 20;
+    const p = s.pitch ?? 2;
+    const d = (z * p) / Math.PI + 8;
+    return { width: d, height: d, thick: s.t ?? 8 };
+  }
+  if (s.kind === "bearing" || s.kind === "washer" || s.kind === "disk" || s.kind === "grill") {
+    const od = s.od ?? (s.kind === "grill" ? 40 : s.kind === "disk" ? 90 : 22);
+    return { width: od, height: od, thick: s.width ?? s.t ?? (s.kind === "washer" ? 2 : s.kind === "disk" ? 4 : 7) };
+  }
+  if (s.kind === "coupling" || s.kind === "bushing" || s.kind === "flexcoup") {
+    const od = s.od ?? (s.kind === "flexcoup" ? 20 : 18);
+    const len = s.length ?? s.height ?? 25;
+    return { width: od + (s.kind === "bushing" ? 8 : 0), height: od + (s.kind === "bushing" ? 8 : 0), thick: len };
+  }
+  if (s.kind === "bracket" || s.kind === "hinge") {
+    const a = s.a ?? 40;
+    const b = s.b ?? 40;
+    return { width: a, height: b, thick: s.t ?? 4 };
+  }
+  if (s.kind === "standoff" || s.kind === "nut" || s.kind === "bolt" || s.kind === "spinner") {
+    const od = s.od ?? (s.kind === "spinner" ? 18 : 8);
+    return { width: od, height: od, thick: s.height ?? (s.kind === "nut" ? 4 : s.kind === "spinner" ? 28 : 12) };
+  }
+  if (s.kind === "knob" || s.kind === "mushroom") {
+    const od = s.od ?? (s.kind === "mushroom" ? 28 : 32);
+    return { width: od, height: od, thick: s.height ?? (s.kind === "mushroom" ? 18 : 14) };
+  }
+  if (s.kind === "nema") {
+    const n = s.size ?? 17;
+    const w = n === 8 ? 20.4 : n === 11 ? 28.2 : n === 14 ? 35.2 : n === 23 ? 56.4 : 42.3;
+    return { width: w, height: w, thick: s.t ?? 5 };
+  }
+  if (s.kind === "tslot") {
+    const a = s.a ?? 20;
+    return { width: a, height: a, thick: s.length ?? 40 };
+  }
+  if (s.kind === "flange" || s.kind === "collar") {
+    const od = s.od ?? (s.kind === "collar" ? 22 : 50);
+    return { width: od, height: od, thick: s.t ?? (s.kind === "collar" ? 8 : 6) };
+  }
+  if (s.kind === "cube" || s.kind === "xyzcube") {
+    const a = s.a ?? 20;
+    return { width: a, height: a, thick: a };
+  }
+  if (s.kind === "box" || s.kind === "case" || s.kind === "bin" || s.kind === "snapbox") {
+    const w = s.width ?? (s.kind === "bin" ? 42 : s.kind === "case" ? 90 : 80);
+    const h = s.height ?? (s.kind === "bin" ? 42 : s.kind === "case" ? 60 : 60);
+    const t = s.t ?? (s.kind === "bin" ? 21 : s.kind === "snapbox" ? 28 : 25);
+    return { width: w, height: h, thick: t };
+  }
+  if (s.kind === "grid") {
+    const n = s.size ?? 2;
+    return { width: n * 42, height: n * 42, thick: 5 };
+  }
+  if (s.kind === "hook") return { width: s.a ?? 18, height: s.b ?? 40, thick: s.t ?? 12 };
+  if (s.kind === "headhook") return { width: s.a ?? 36, height: s.b ?? 52, thick: s.t ?? 14 };
+  if (s.kind === "clip") return { width: s.a ?? 16, height: s.b ?? 18, thick: s.t ?? 12 };
+  if (s.kind === "beltclip") return { width: s.a ?? 28, height: s.b ?? 18, thick: s.t ?? 12 };
+  if (s.kind === "ledclip") return { width: s.a ?? 12, height: s.b ?? 10, thick: s.t ?? 8 };
+  if (s.kind === "stand") return { width: s.width ?? 70, height: s.height ?? 80, thick: s.t ?? 12 };
+  if (s.kind === "opener") return { width: s.length ?? 80, height: 18, thick: 8 };
+  if (s.kind === "card") return { width: 85.6, height: 54, thick: s.t ?? 0.8 };
+  if (s.kind === "wrench") return { width: s.length ?? 90, height: 18, thick: 6 };
+  if (s.kind === "comb") return { width: s.length ?? 40, height: 12, thick: 8 };
+  if (s.kind === "hull") return { width: 60, height: 31, thick: 48 };
+  if (s.kind === "ruler") return { width: s.length ?? 100, height: 20, thick: 3 };
+  if (s.kind === "gopro") return { width: s.a ?? 32, height: s.b ?? 24, thick: s.t ?? 18 };
+  if (s.kind === "picam") return { width: 25, height: 24, thick: s.t ?? 3 };
+  if (s.kind === "arm") return { width: s.a ?? 50, height: s.b ?? 24, thick: s.t ?? 16 };
+  if (s.kind === "nameplate") return { width: s.width ?? 80, height: s.height ?? 30, thick: s.t ?? 8 };
+  if (s.kind === "spool") return { width: s.width ?? 80, height: s.height ?? 70, thick: s.t ?? 16 };
+  if (s.kind === "plate") return { width: s.width ?? 80, height: s.height ?? 60, thick: s.t ?? 6 };
+  return { width: s.width ?? 80, height: s.height ?? 60, thick: s.t ?? 6 };
+}
+
+export function parseBeniPragma(src: string): SolidSpec | null {
+  const m = src.match(/\/\/\s*(?:pxd2|beni):(\w+)([^\n]*)/);
+  if (!m) return null;
+  const kind = m[1] as SolidKind;
+  const kv: Record<string, number> = {};
+  for (const p of m[2].trim().split(/\s+/).filter(Boolean)) {
+    const [k, v] = p.split("=");
+    if (k && v && Number.isFinite(Number(v))) kv[k] = Number(v);
+  }
+  if (!SOLID_KINDS.includes(kind)) return null;
+  return { kind, ...kv };
+}
+
+export function isGearKind(k: SolidKind | undefined) {
+  return k === "spur" || k === "herringbone" || k === "compound" || k === "bevel" || k === "rack" || k === "pulley" || k === "idler";
+}
+
+export function scadPragma(solid: SolidSpec) {
+  return `// pxd2:${solid.kind} ${Object.entries(solid)
+    .filter(([k]) => k !== "kind")
+    .map(([k, v]) => `${k}=${v}`)
+    .join(" ")}`;
+}
