@@ -3,6 +3,9 @@
 Ask for a part. Reverse-engineering CAD that is meant to beat Fusion / SolidWorks
 for a child-simple shop workflow: stamp, stack, scan, laser-align, print.
 
+**Site:** [pxd2.github.io/cad](https://pxd2.github.io/cad/)  
+**Source:** [github.com/PxD2/cad](https://github.com/PxD2/cad)
+
 Kernel is millimeters. Display units are mm / cm / inches. Bed is a Creality
 K2 Plus 350³.
 
