@@ -3,11 +3,15 @@
 Ask for a part. Reverse-engineering CAD that is meant to beat Fusion / SolidWorks
 for a child-simple shop workflow: stamp, stack, scan, laser-align, print.
 
-**Site:** [pxd2.github.io/cad](https://pxd2.github.io/cad/)  
+**Run it:** [pxd2.github.io/cad](https://pxd2.github.io/cad/)  
 **Source:** [github.com/PxD2/cad](https://github.com/PxD2/cad)
 
-Kernel is millimeters. Display units are mm / cm / inches. Bed is a Creality
-K2 Plus 350³.
+The GitHub Pages host is the full program (Three.js tray, laser level, Thingiverse
+twins, Generic Revo → STL). Kernel is millimeters. Display mm / cm / inches.
+Bed is a Creality K2 Plus 350³.
+
+Grok/shop AI calls need a server; on the public URL use **Local**. Stamp, stack,
+lasers, scan, and export all run in the browser.
 
 ## What it does
 
@@ -20,15 +24,14 @@ K2 Plus 350³.
 - **Generic Revopoint** — drop a scan, voxelize, stamp STL onto the tray.
 - **Export** — STL, DXF, OpenSCAD, CadQuery, FreeCAD, Blender, JSON.
 
-## Run
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the URL Vite prints. `npm test` runs the CAD kernel tests (units, library,
-assembly, Thingiverse twins, laser level).
+`npm run build:pages` emits the static host used at pxd2.github.io/cad.
 
 ## Voice
 

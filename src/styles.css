@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+@source "../pages-host/**/*.html";
 
 @theme {
   --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
@@ -26,7 +28,8 @@
 @layer base {
   html,
   body,
-  #app {
+  #app,
+  #root {
     height: 100%;
   }
   body {

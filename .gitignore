@@ -14,6 +14,6 @@ screenshots/
 !.env.example
 .node_modules.lock
 .DS_Store
-coverage/
+pages-dist/
 AGENTS.md
 AGENTS.project.md
