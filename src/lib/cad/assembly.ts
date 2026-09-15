@@ -1,6 +1,6 @@
 import type { Part } from "./types";
 
-export type PaintTool = "select" | "stamp" | "stack" | "move" | "erase";
+export type PaintTool = "select" | "stamp" | "stack" | "move" | "erase" | "belt";
 
 export type Inst = {
   id: string;

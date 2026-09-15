@@ -37,6 +37,19 @@ import { bboxOf } from "./io";
 import { asciiStl, downloadText, revoById, voxelSurface } from "./revo";
 import { demoDualScan } from "./scan-synth";
 import { alignToLasers, snapLiftToLasers, snapToLasers } from "./laser";
+import {
+  BELT_PROFILES,
+  beltCaption,
+  defaultBeltPair,
+  inferProfile,
+  isPulleyLike,
+  makeBelt,
+  samePulleySet,
+  wrapBelt,
+  type BeltLoop,
+  type BeltProfileId,
+} from "./belt";
+import { kitById, KITS } from "./kits";
 
 export type Tab = "model" | "voice" | "gesture" | "convert" | "files" | "library" | "iterate";
 export type CamOp = "reset" | "zoomin" | "zoomout" | "rotcw" | "rotccw";
@@ -141,6 +154,15 @@ type CadState = {
   stampScan: (verts: number[], name: string) => void;
   exportScanStl: () => void;
   ingestScan: (name: string, verts: number[]) => void;
+  belts: BeltLoop[];
+  beltPick: string | null;
+  beltProfile: BeltProfileId;
+  setBeltProfile: (p: BeltProfileId) => void;
+  clickBelt: (id: string) => void;
+  beltPair: (a?: string | null, b?: string | null) => void;
+  dropBelt: (id: string) => void;
+  loadEasyBelt: () => void;
+  loadKit: (id: string) => void;
 };
 
 export const useCad = create<CadState>()(
@@ -148,7 +170,7 @@ export const useCad = create<CadState>()(
     (set, get) => ({
       scad: DEFAULT_SCAD,
       part: defaultPart(),
-      log: [{ t: Date.now(), text: "PXD2 ready. Stamp a part, drop a Revopoint scan, or ask Grok." }],
+      log: [{ t: Date.now(), text: "PXD2 ready. Stamp a part, belt two pulleys, or ask Grok." }],
       tab: "model",
       unit: "mm",
       revisions: [],
@@ -170,6 +192,9 @@ export const useCad = create<CadState>()(
       tool: "stamp",
       snap: 5,
       laserOn: true,
+      belts: [],
+      beltPick: null,
+      beltProfile: "gt2",
       libSource: "beni",
       thingsQuery: "",
       revoId: "generic",
@@ -373,7 +398,7 @@ export const useCad = create<CadState>()(
         set({ part: hit.part, scad: hit.scad || get().scad });
         get().pushLog(`Thickness ${hit.part.thick}`);
       },
-      setTool: (tool) => set({ tool }),
+      setTool: (tool) => set({ tool, beltPick: tool === "belt" ? get().beltPick : null }),
       setSnap: (snap) => set({ snap }),
       setLaserOn: (laserOn) => {
         set({ laserOn });
@@ -384,7 +409,7 @@ export const useCad = create<CadState>()(
         const s = get();
         const pos = x == null || z == null ? nextStampXZ(s.instances, s.snap) : { x: snapTo(x, s.snap), z: snapTo(z, s.snap) };
         const inst = makeInst(s.part, pos.x, 0, pos.z);
-        set({ instances: [...s.instances, inst].slice(-24), selId: inst.id, tool: "move" });
+        set({ instances: [...s.instances, inst].slice(-48), selId: inst.id, tool: "move" });
         s.pushLog(`Stamp ${inst.name} @ ${inst.x},${inst.z} — drag to move`);
       },
       stackAt: (x, z) => {
@@ -393,7 +418,7 @@ export const useCad = create<CadState>()(
         const pz = z == null ? s.instances.find((i) => i.id === s.selId)?.z ?? 0 : snapTo(z, s.snap);
         const y = hitStackY(s.instances, px, pz);
         const inst = makeInst(s.part, px, y, pz);
-        set({ instances: [...s.instances, inst].slice(-24), selId: inst.id, tool: "stack" });
+        set({ instances: [...s.instances, inst].slice(-48), selId: inst.id, tool: "stack" });
         s.pushLog(`Stack ${inst.name} at ${y.toFixed(1)} mm`);
       },
       moveInst: (id, x, z) => {
@@ -473,14 +498,20 @@ export const useCad = create<CadState>()(
         const kill = id || get().selId;
         if (!kill) return;
         const instances = get().instances.filter((it) => it.id !== kill);
-        set({ instances, selId: instances.at(-1)?.id ?? null });
+        const belts = get().belts.filter((b) => b.id !== kill && !b.pulleyIds.includes(kill));
+        set({
+          instances,
+          belts,
+          selId: instances.at(-1)?.id ?? null,
+          beltPick: get().beltPick === kill ? null : get().beltPick,
+        });
         get().pushLog("Erased layer");
       },
       restack: () => {
         set({ instances: restackY(get().instances) });
         get().pushLog("Restacked");
       },
-      clearStack: () => set({ instances: [], selId: null }),
+      clearStack: () => set({ instances: [], selId: null, belts: [], beltPick: null }),
       loadDemoStack: () => {
         const plate = defaultPart();
         const gear = libById("spur-m2-20");
@@ -562,7 +593,7 @@ export const useCad = create<CadState>()(
         const inst = makeInst(part, 0, 0, 0);
         set({
           part,
-          instances: [...get().instances, inst].slice(-24),
+          instances: [...get().instances, inst].slice(-48),
           selId: inst.id,
           tool: "move",
           tab: "files",
@@ -588,6 +619,78 @@ export const useCad = create<CadState>()(
           get().stampScan(verts, name.replace(/\.[^.]+$/, "") || "revo-scan");
         }
       },
+      setBeltProfile: (beltProfile) => {
+        set({ beltProfile });
+        get().pushLog(`${BELT_PROFILES[beltProfile].name} belt`);
+      },
+      clickBelt: (id) => {
+        const s = get();
+        const it = s.instances.find((x) => x.id === id);
+        if (!it || !isPulleyLike(it.part)) {
+          s.pushLog("Belt needs a pulley, gear, idler, or wheel");
+          return;
+        }
+        if (!s.beltPick || s.beltPick === id) {
+          set({ beltPick: id, selId: id });
+          s.pushLog("Belt: click the other pulley");
+          return;
+        }
+        get().beltPair(s.beltPick, id);
+        set({ beltPick: null, tool: "select" });
+      },
+      beltPair: (a, b) => {
+        const s = get();
+        const pair = defaultBeltPair(s.instances, a ?? s.selId, b ?? null);
+        if (!pair) {
+          s.pushLog("Stamp two pulleys, then belt them");
+          return;
+        }
+        if (s.belts.some((x) => samePulleySet(x.pulleyIds, pair))) {
+          s.pushLog("Already belted");
+          return;
+        }
+        const parts = pair
+          .map((id) => s.instances.find((it) => it.id === id)?.part)
+          .filter((p): p is NonNullable<typeof p> => !!p);
+        const profile = parts.some((p) => p.solid?.pitch === 5) ? "htd5" : inferProfile(parts);
+        const width = Math.min(
+          BELT_PROFILES[profile].width,
+          Math.max(4, Math.min(...parts.map((p) => p.thick || 8)) - 1),
+        );
+        const belt = makeBelt(pair, s.beltProfile || profile, width);
+        if (profile !== s.beltProfile && s.beltProfile === "gt2") belt.profile = profile;
+        const path = wrapBelt(s.instances, belt);
+        if (!path.ok) {
+          s.pushLog(path.note || "Can't wrap that pair");
+          return;
+        }
+        set({ belts: [...s.belts, belt].slice(-16), selId: pair[0], tool: "select", beltPick: null });
+        get().pushLog(`Belt ${beltCaption(path)}`);
+      },
+      dropBelt: (id) => {
+        set({ belts: get().belts.filter((b) => b.id !== id) });
+        get().pushLog("Belt off");
+      },
+      loadEasyBelt: () => get().loadKit("gt2-drive"),
+      loadKit: (id) => {
+        const kit = kitById(id) || KITS.find((k) => k.id.includes(id) || k.name.toLowerCase().includes(id.toLowerCase()));
+        if (!kit) {
+          get().pushLog(`No kit ${id}`);
+          return;
+        }
+        const built = kit.build();
+        set({
+          instances: built.instances,
+          belts: built.belts,
+          selId: built.instances[0]?.id ?? null,
+          tool: "move",
+          tab: "model",
+          beltPick: null,
+        });
+        if (built.instances[0]) set({ part: built.instances[0].part });
+        get().pushLog(`${kit.name} · ${built.instances.length} parts${built.belts.length ? ` · ${built.belts.length} belt` : ""}`);
+        get().cam("reset");
+      },
     }),
     {
       name: "pxd2-cad",
@@ -605,6 +708,8 @@ export const useCad = create<CadState>()(
         snap: s.snap,
         laserOn: s.laserOn,
         revoId: s.revoId,
+        belts: s.belts,
+        beltProfile: s.beltProfile,
       }),
     },
   ),

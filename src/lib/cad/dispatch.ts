@@ -115,6 +115,18 @@ export function dispatchVoice(raw: string, stopVoice?: () => void) {
       s.alignLasers();
       speak("Aligned to the laser.");
       return;
+    case "easy-belt":
+      s.loadEasyBelt();
+      speak("Easy GT2 belt.");
+      return;
+    case "belt-pair":
+      s.beltPair();
+      speak("Belt on.");
+      return;
+    case "kit":
+      s.loadKit(cmd.q);
+      speak(cmd.q);
+      return;
     case "things":
       s.setLibSource("tv");
       s.setThingsQuery(cmd.q);

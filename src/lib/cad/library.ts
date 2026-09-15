@@ -4,14 +4,25 @@ import { envelopeOf, scadPragma, type SolidKind, type SolidSpec } from "./solid-
 export type LibItem = {
   id: string;
   name: string;
-  group: "Gears" | "Compound" | "Motion" | "Hardware" | "Fasteners" | "Frames" | "Shop";
+  group: "Gears" | "Compound" | "Motion" | "Belts" | "Drive" | "Hardware" | "Fasteners" | "Frames" | "Electronics" | "Shop";
   source: string;
   hint: string;
   solid: SolidSpec;
   scad: string;
 };
 
-export const LIB_GROUPS: LibItem["group"][] = ["Gears", "Compound", "Motion", "Hardware", "Fasteners", "Frames", "Shop"];
+export const LIB_GROUPS: LibItem["group"][] = [
+  "Gears",
+  "Compound",
+  "Motion",
+  "Belts",
+  "Drive",
+  "Hardware",
+  "Fasteners",
+  "Frames",
+  "Electronics",
+  "Shop",
+];
 
 function item(
   id: string,
@@ -359,6 +370,143 @@ function buildLibrary(): LibItem[] {
   for (const [id, name, solid, hint] of shop) {
     out.push(item(id, name, "Shop", "PXD2 parametric twin", hint, solid));
   }
+
+  const belts: [string, string, SolidSpec, string][] = [
+    ["gt2-loop-100", "GT2 loop 200 mm", { kind: "belt", teeth: 100, pitch: 2, t: 6 }, "100T · 6 mm"],
+    ["gt2-loop-152", "GT2 loop 304 mm", { kind: "belt", teeth: 152, pitch: 2, t: 6 }, "152T"],
+    ["gt2-loop-200", "GT2 loop 400 mm", { kind: "belt", teeth: 200, pitch: 2, t: 6 }, "200T"],
+    ["gt2-loop-250", "GT2 loop 500 mm", { kind: "belt", teeth: 250, pitch: 2, t: 6 }, "250T"],
+    ["gt2-loop-300", "GT2 loop 610 mm", { kind: "belt", teeth: 305, pitch: 2, t: 6 }, "305T"],
+    ["gt2-open-500", "GT2 open 500 mm", { kind: "belt", teeth: 250, pitch: 2, t: 6 }, "open"],
+    ["gt3-loop-100", "GT3 loop 300 mm", { kind: "belt", teeth: 100, pitch: 3, t: 9 }, "100T · 9 mm"],
+    ["htd3-loop-100", "HTD 3M loop 300", { kind: "belt", teeth: 100, pitch: 3, t: 9 }, "3 mm pitch"],
+    ["htd5-loop-80", "HTD 5M loop 400", { kind: "belt", teeth: 80, pitch: 5, t: 15 }, "5 mm pitch"],
+    ["t5-loop-80", "T5 loop 400 mm", { kind: "belt", teeth: 80, pitch: 5, t: 10 }, "T5"],
+    ["t2p5-loop-120", "T2.5 loop 300", { kind: "belt", teeth: 120, pitch: 2.5, t: 6 }, "T2.5"],
+    ["mxl-loop-100", "MXL loop 203 mm", { kind: "belt", teeth: 100, pitch: 2.032, t: 6.35 }, "MXL"],
+    ["vbelt-a-800", "V-belt A 800", { kind: "belt", teeth: 0, pitch: 0, t: 13, length: 800, od: 80 }, "A-section"],
+    ["oring-608", "O-ring 608", { kind: "belt", teeth: 40, pitch: 2, t: 1.8 }, "dash for 608"],
+    ["oring-2-50", "O-ring Ø50", { kind: "belt", teeth: 80, pitch: 2, t: 2.5 }, "static seal"],
+  ];
+  for (const [id, name, solid, hint] of belts) {
+    out.push(item(id, name, "Belts", "closed loop / open", hint, solid));
+  }
+
+  for (const od of [5, 8, 10, 12] as const) {
+    for (const len of [40, 80, 120, 200]) {
+      if (od >= 12 && len === 40) continue;
+      out.push(
+        item(`shaft-${od}-${len}`, `Shaft Ø${od} × ${len}`, "Drive", "ground rod", `D${od}`, {
+          kind: "shaft",
+          od,
+          length: len,
+        }),
+      );
+    }
+  }
+  out.push(item("shaft-5-d", "D-shaft Ø5 × 80", "Drive", "motor D-flat", "flat", { kind: "shaft", od: 5, length: 80, flutes: 1 }));
+  for (const len of [80, 150, 200, 300]) {
+    out.push(
+      item(`t8-${len}`, `T8 leadscrew ${len}`, "Drive", "trapezoid 2 mm", "T8", {
+        kind: "leadscrew",
+        od: 8,
+        length: len,
+        pitch: 2,
+        bore: 0,
+      }),
+    );
+  }
+  out.push(item("t8-nut", "T8 anti-backlash nut", "Drive", "POM nut", "T8", { kind: "nut", od: 22, id: 8, height: 15 }));
+  for (const z of [9, 12, 15, 18, 21]) {
+    out.push(
+      item(`sprocket-08b-${z}`, `Sprocket 08B ${z}T`, "Drive", "roller chain", "12.7 mm", {
+        kind: "sprocket",
+        teeth: z,
+        pitch: 12.7,
+        bore: 8,
+        t: 8,
+      }),
+    );
+  }
+  out.push(item("chain-08b-10", "Chain 08B × 10", "Drive", "roller chain", "10 link", { kind: "chain", length: 127, t: 8 }));
+  for (const [od, id, len] of [
+    [10, 6, 25],
+    [12, 8, 30],
+    [16, 10, 40],
+    [20, 12, 50],
+  ] as [number, number, number][]) {
+    out.push(item(`spring-${od}-${len}`, `Spring Ø${od} × ${len}`, "Drive", "compression", `ID ${id}`, { kind: "spring", od, id, length: len }));
+  }
+  for (const len of [80, 100, 150, 200]) {
+    out.push(item(`mgn12-${len}`, `MGN12 rail ${len}`, "Drive", "linear rail", "carriage", { kind: "rail", a: 12, length: len }));
+  }
+  for (const od of [48, 60, 80, 100]) {
+    out.push(item(`wheel-${od}`, `Wheel Ø${od}`, "Drive", "rubber + hub", `608-ready`, { kind: "wheel", od, bore: 8, t: od >= 80 ? 16 : 12 }));
+  }
+  out.push(item("omni-48", "Omni wheel Ø48", "Drive", "lateral roll", "omni", { kind: "wheel", od: 48, bore: 5, t: 14 }));
+  for (const len of [40, 80, 160]) {
+    out.push(item(`pipe-half-${len}`, `Pipe ½″ × ${len}`, "Drive", "PVC / EMT", "Ø21.3", { kind: "pipe", od: 21.3, id: 15.8, length: len }));
+  }
+  out.push(item("servo-sg90", "Servo SG90", "Electronics", "9 g micro", "23 × 12.5", { kind: "servo", width: 23, height: 12.5, t: 22 }));
+  out.push(item("servo-mg996", "Servo MG996", "Electronics", "metal gear", "40 × 20", { kind: "servo", width: 40, height: 20, t: 38 }));
+  for (const z of [16, 20, 24, 30]) {
+    out.push(
+      item(`helical-${z}`, `Helical ${z}T · M2`, "Gears", "helix spur", "quiet", {
+        kind: "helical",
+        teeth: z,
+        module: 2,
+        bore: 5,
+        t: 10,
+      }),
+    );
+  }
+  for (const z of [32, 40, 48, 60]) {
+    out.push(
+      item(`internal-${z}`, `Internal ${z}T · M2`, "Gears", "ring gear", "planetary", {
+        kind: "internal",
+        teeth: z,
+        module: 2,
+        t: 8,
+      }),
+    );
+  }
+  out.push(
+    item("planetary-3", "Planetary 3-planet", "Gears", "sun · 3 planet · ring", "12/36", {
+      kind: "planetary",
+      teeth: 12,
+      teeth2: 36,
+      module: 1.5,
+      t: 8,
+    }),
+  );
+  for (const [name, od, id, h] of [
+    ["m3", 4.6, 3, 5],
+    ["m4", 6.3, 4, 6],
+    ["m5", 8, 5, 7],
+  ] as [string, number, number, number][]) {
+    out.push(
+      item(`insert-${name}`, `Heat-set ${name.toUpperCase()}`, "Fasteners", "brass insert", `${h} mm`, {
+        kind: "insert",
+        od,
+        id,
+        height: h,
+      }),
+    );
+  }
+  for (const a of [20, 30, 40]) {
+    out.push(item(`corner-${a}`, `${a} corner cube`, "Frames", "3-way extrusion", `${a}³`, { kind: "corner", a }));
+  }
+  for (const [od, t] of [
+    [40, 10],
+    [40, 20],
+    [80, 15],
+    [80, 25],
+    [120, 25],
+  ] as [number, number][]) {
+    out.push(item(`fan-${od}-${t}`, `Fan ${od}×${t}`, "Electronics", "axial", `${od} mm`, { kind: "fan", od, t }));
+  }
+  out.push(item("batt-18650", "18650 holder ×2", "Electronics", "cell cradle", "2 cell", { kind: "battery", width: 40, height: 22, t: 20 }));
+  out.push(item("uno-plate", "Arduino UNO plate", "Electronics", "R3 footprint", "68.6 × 53.4", { kind: "arduino", t: 4 }));
 
   const seen = new Set<string>();
   return out.filter((x) => {

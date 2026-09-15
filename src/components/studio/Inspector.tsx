@@ -210,6 +210,10 @@ function StackList() {
   const laserOn = useCad((s) => s.laserOn);
   const alignLasers = useCad((s) => s.alignLasers);
   const setLaserOn = useCad((s) => s.setLaserOn);
+  const beltPair = useCad((s) => s.beltPair);
+  const loadEasyBelt = useCad((s) => s.loadEasyBelt);
+  const belts = useCad((s) => s.belts);
+  const dropBelt = useCad((s) => s.dropBelt);
   const layers = instances.slice().reverse();
   const sel = instances.find((x) => x.id === selId) ?? null;
   const box = sel ? instBox(sel) : null;
@@ -226,7 +230,9 @@ function StackList() {
         )}
       </div>
       {instances.length === 0 ? (
-        <p className="mt-1.5 text-sm text-muted">Stamp or stack the brush onto the bed. Layers pile like paint.</p>
+        <p className="mt-1.5 text-sm text-muted">
+          Stamp parts, then Easy belt to wrap a GT2 drive. Layers pile like paint.
+        </p>
       ) : (
         <ul className="mt-1.5 space-y-1">
           {layers.map((it, i) => (
@@ -254,6 +260,24 @@ function StackList() {
           ))}
         </ul>
       )}
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        <Chip onClick={loadEasyBelt}>Easy belt</Chip>
+        {instances.length > 1 && <Chip onClick={() => beltPair()}>Belt pair</Chip>}
+      </div>
+      {belts.length > 0 && (
+        <ul className="mt-1.5 space-y-1">
+          {belts.map((b) => (
+            <li key={b.id} className="flex gap-1">
+              <span className="flex min-h-11 flex-1 items-center rounded-sm border border-border px-2 font-mono text-xs text-muted">
+                {b.profile.toUpperCase()} · {b.pulleyIds.length} pulleys · {b.width} mm
+              </span>
+              <Btn kind="quiet" onClick={() => dropBelt(b.id)} aria-label="Remove belt">
+                Del
+              </Btn>
+            </li>
+          ))}
+        </ul>
+      )}
       {selId && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           <Chip onClick={raiseInst}>Raise</Chip>
@@ -261,6 +285,8 @@ function StackList() {
           <Chip onClick={() => rotateSel(90)}>Rot 90</Chip>
           <Chip onClick={() => flipSel(90)}>Flip</Chip>
           <Chip onClick={() => eraseInst()}>Erase</Chip>
+          <Chip onClick={() => beltPair()}>Belt pair</Chip>
+          <Chip onClick={loadEasyBelt}>Easy belt</Chip>
           <Chip
             onClick={() => {
               const it = instances.find((x) => x.id === selId);

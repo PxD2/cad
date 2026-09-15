@@ -14,7 +14,7 @@ export type ThingHit = {
   hint: string;
 };
 
-export const THING_TAGS = ["Gears", "Motion", "Hardware", "Mounts", "Organization", "Calibration"] as const;
+export const THING_TAGS = ["Gears", "Motion", "Belts", "Hardware", "Mounts", "Organization", "Calibration", "Electronics"] as const;
 
 function tv(
   thingId: number,
@@ -105,6 +105,27 @@ export const THINGIVERSE: ThingHit[] = [
   tv(3002776, "GoPro style mount", "3DWinni", "CC-BY", "Mounts", "gopro", "two-prong"),
   tv(49000, "Fan 40 mm grill", "nophead", "CC-BY", "Mounts", "grill-40", "40 mm"),
   tv(49001, "Fan 80 mm grill", "nophead", "CC-BY", "Mounts", "grill-80", "80 mm"),
+  tv(33122, "GT2 closed belt 200", "mechadense", "CC-BY", "Belts", "gt2-loop-100", "100T · 200 mm"),
+  tv(33123, "GT2 closed belt 400", "mechadense", "CC-BY", "Belts", "gt2-loop-200", "200T"),
+  tv(33124, "HTD 5M belt", "mechadense", "CC-BY", "Belts", "htd5-loop-80", "5 mm pitch"),
+  tv(14055, "8 mm shaft 80", "emmett", "CC-BY", "Motion", "shaft-8-80", "ground rod"),
+  tv(14056, "5 mm D-shaft", "emmett", "CC-BY", "Motion", "shaft-5-d", "motor flat"),
+  tv(15381, "T8 leadscrew 150", "nallath", "CC-BY", "Motion", "t8-150", "2 mm lead"),
+  tv(15382, "T8 nut", "nallath", "CC-BY", "Motion", "t8-nut", "anti-backlash"),
+  tv(21591, "SG90 servo", "mechadense", "CC-BY", "Electronics", "servo-sg90", "9 g"),
+  tv(21592, "MG996 servo", "mechadense", "CC-BY", "Electronics", "servo-mg996", "metal"),
+  tv(49002, "Fan 40×10", "nophead", "CC-BY", "Electronics", "fan-40-10", "4010"),
+  tv(49003, "Fan 80×25", "nophead", "CC-BY", "Electronics", "fan-80-25", "8025"),
+  tv(33909, "18650 holder", "jsheares", "CC-BY", "Electronics", "batt-18650", "2 cell"),
+  tv(909530, "Arduino UNO plate", "luma", "CC-BY", "Electronics", "uno-plate", "R3"),
+  tv(13381, "Helical gear 20T", "thehans", "CC-BY", "Gears", "helical-20", "helix"),
+  tv(16633, "Internal gear 40T", "emmett", "CC-BY", "Gears", "internal-40", "ring"),
+  tv(16634, "Planetary 3-planet", "emmett", "CC-BY", "Gears", "planetary-3", "sun + ring"),
+  tv(28209, "2020 corner cube", "nallath", "CC-BY", "Hardware", "corner-20", "3-way"),
+  tv(55714, "M3 heat-set insert", "tbuser", "CC-BY", "Hardware", "insert-m3", "brass"),
+  tv(14243, "MGN12 rail 100", "jsheares", "CC-BY", "Motion", "mgn12-100", "linear"),
+  tv(28144, "Wheel Ø80", "thieums", "CC-BY", "Motion", "wheel-80", "608 hub"),
+  tv(9136, "Sprocket 08B 15T", "emmett", "CC-BY", "Motion", "sprocket-08b-15", "roller"),
 ];
 
 export function parseThingRef(raw: string): number | null {

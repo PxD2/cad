@@ -19,7 +19,15 @@ describe("library", () => {
     assert.ok(libById("gopro"));
     assert.ok(libById("cube-xyz"));
     assert.ok(libById("collar-8"));
+    assert.ok(libById("gt2-20-b5"));
+    assert.ok(libById("gt2-loop-200"));
+    assert.ok(libById("shaft-8-80"));
+    assert.ok(libById("servo-sg90"));
+    assert.ok(libById("helical-20"));
     assert.ok(libMatch("608"));
+    assert.ok(LIBRARY.some((x) => x.group === "Belts"));
+    assert.ok(LIBRARY.some((x) => x.group === "Drive"));
+    assert.ok(LIBRARY.some((x) => x.group === "Electronics"));
   });
 
   it("drops a spur with a beni pragma", () => {

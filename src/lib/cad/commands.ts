@@ -20,10 +20,13 @@ export type Cmd =
   | { t: "thicken"; delta: number }
   | { t: "lib"; q: string }
   | { t: "paint"; op: "stamp" | "stack" | "erase" | "raise" | "lower" | "restack" | "demo" | "clear" | "flip" | "rotate" }
-  | { t: "tool"; tool: "select" | "stamp" | "stack" | "move" | "erase" }
+  | { t: "tool"; tool: "select" | "stamp" | "stack" | "move" | "erase" | "belt" }
   | { t: "snap"; snap: number }
   | { t: "laser"; on: boolean }
   | { t: "laser-align" }
+  | { t: "belt-pair" }
+  | { t: "easy-belt" }
+  | { t: "kit"; q: string }
   | { t: "shop"; text: string }
   | { t: "things"; q: string }
   | { t: "stamp-thing"; q: string }
@@ -128,6 +131,13 @@ export function parseCommand(raw: string): Cmd {
   if (/scans? tab|open scans|scan tray/.test(text)) return { t: "tab", tab: "files" };
 
   if (/demo (?:stack|assembly)/.test(text)) return { t: "paint", op: "demo" };
+  if (/easy belt|belt drive|demo belt|gt2 drive/.test(text)) return { t: "easy-belt" };
+  if (/^(?:belt them|belt (?:the )?pair|put a belt|gt2 belt|htd belt|wrap (?:a )?belt)$/.test(text)) return { t: "belt-pair" };
+  if (/belt tool/.test(text)) return { t: "tool", tool: "belt" };
+  if (/^(?:kit|assembly kit|load kit)\s+(.+)/.test(text)) {
+    const m = text.match(/^(?:kit|assembly kit|load kit)\s+(.+)/);
+    return { t: "kit", q: m?.[1]?.trim() || "gt2" };
+  }
   if (/restack/.test(text)) return { t: "paint", op: "restack" };
   if (/clear (?:stack|layers|assembly)/.test(text)) return { t: "paint", op: "clear" };
   if (/^(?:stack|stack it|stack the brush|on top)$/.test(text)) return { t: "paint", op: "stack" };

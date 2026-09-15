@@ -7,6 +7,7 @@ import {
   Path,
   Shape,
   SphereGeometry,
+  TorusGeometry,
   Vector2,
 } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -120,6 +121,42 @@ export function geometryForSolid(s: SolidSpec): BufferGeometry {
       return spoolGeo(s.width ?? 80, s.height ?? 70);
     case "plate":
       return cubeBox(s.width ?? 80, s.t ?? 6, s.height ?? 60);
+    case "belt":
+      return beltLoopGeo(s.teeth ?? 100, s.pitch ?? 2, s.t ?? 6);
+    case "shaft":
+      return shaftGeo(s.od ?? 8, s.length ?? 80, s.flutes ?? 0);
+    case "leadscrew":
+      return leadscrewGeo(s.od ?? 8, s.length ?? 150, s.pitch ?? 2);
+    case "sprocket":
+      return sprocketGeo(s.teeth ?? 15, s.pitch ?? 12.7, s.bore ?? 8, s.t ?? 8);
+    case "spring":
+      return springGeo(s.od ?? 12, s.id ?? 8, s.length ?? 30);
+    case "rail":
+      return railGeo(s.a ?? 12, s.length ?? 100);
+    case "wheel":
+      return wheelGeo(s.od ?? 80, s.bore ?? 8, s.t ?? 12);
+    case "pipe":
+      return pipeGeo(s.od ?? 21.3, s.id ?? 15.8, s.length ?? 80);
+    case "servo":
+      return servoGeo(s.width ?? 23, s.height ?? 12.5, s.t ?? 22);
+    case "helical":
+      return helicalGeo(s.teeth ?? 20, s.module ?? 2, s.bore ?? 5, s.t ?? 10);
+    case "internal":
+      return internalGeo(s.teeth ?? 40, s.module ?? 2, s.t ?? 8);
+    case "insert":
+      return insertGeo(s.od ?? 4.6, s.id ?? 3, s.height ?? 5);
+    case "corner":
+      return cornerGeo(s.a ?? 20);
+    case "fan":
+      return fanGeo(s.od ?? 40, s.t ?? 10);
+    case "chain":
+      return chainGeo(s.length ?? 50, s.t ?? 8);
+    case "battery":
+      return batteryGeo(s.width ?? 40, s.height ?? 22);
+    case "arduino":
+      return arduinoGeo();
+    case "planetary":
+      return planetaryGeo(s.teeth ?? 12, s.teeth2 ?? 36, s.module ?? 1.5, s.t ?? 8);
     default:
       return spurGeo(12, 2, 5, 6);
   }
@@ -813,6 +850,235 @@ function rulerGeo(len: number): BufferGeometry {
   }
   return merge([body, ...ticks]);
 }
+
+function beltLoopGeo(z: number, pitch: number, width: number): BufferGeometry {
+  const r = z > 0 && pitch > 0 ? (z * pitch) / (2 * Math.PI) : 40;
+  const tube = Math.max(0.7, width * 0.22);
+  const torus = new TorusGeometry(Math.max(4, r), tube, 10, 48);
+  torus.rotateX(Math.PI / 2);
+  torus.translate(0, width / 2, 0);
+  return torus;
+}
+
+function shaftGeo(od: number, len: number, flats: number): BufferGeometry {
+  const body = new CylinderGeometry(od / 2, od / 2, len, 28);
+  if (flats <= 0) return body;
+  const flat = cubeBox(od * 0.22, len * 0.7, od * 0.08);
+  flat.translate(od * 0.42, -len * 0.05, 0);
+  return merge([body, flat]);
+}
+
+function leadscrewGeo(od: number, len: number, pitch: number): BufferGeometry {
+  const core = new CylinderGeometry(od / 2 - 0.6, od / 2 - 0.6, len, 20);
+  const rings: BufferGeometry[] = [];
+  const n = Math.max(4, Math.floor(len / Math.max(1.2, pitch)));
+  for (let i = 0; i < n; i++) {
+    const t = new TorusGeometry(od / 2 - 0.2, 0.55, 6, 16);
+    t.rotateX(Math.PI / 2);
+    t.translate(0, -len / 2 + 2 + i * (len / n), 0);
+    rings.push(t);
+  }
+  const ends = new CylinderGeometry(od / 2, od / 2, 4, 16);
+  ends.translate(0, len / 2 - 2, 0);
+  return merge([core, ends, ...rings]);
+}
+
+function sprocketGeo(z: number, pitch: number, bore: number, t: number): BufferGeometry {
+  const body = spurGeo(z, pitch / Math.PI, bore, t);
+  const hub = new CylinderGeometry(bore / 2 + 4, bore / 2 + 4, t + 2, 20);
+  return merge([body, hub]);
+}
+
+function springGeo(od: number, id: number, len: number): BufferGeometry {
+  const r = (od + id) / 4;
+  const tube = Math.max(0.6, (od - id) / 4);
+  const coils = Math.max(4, Math.round(len / (tube * 2.4)));
+  const bits: BufferGeometry[] = [];
+  for (let i = 0; i < coils; i++) {
+    const t = new TorusGeometry(r, tube, 8, 16, Math.PI * 1.6);
+    t.rotateX(Math.PI / 2);
+    t.translate(0, (i / (coils - 1)) * len - len / 2, 0);
+    t.rotateY((i * Math.PI) / 3);
+    bits.push(t);
+  }
+  return merge(bits);
+}
+
+function railGeo(a: number, len: number): BufferGeometry {
+  const rail = cubeBox(a, a * 0.7, len);
+  const lipL = cubeBox(a * 0.18, a * 0.22, len);
+  lipL.translate(-a * 0.38, a * 0.7, 0);
+  const lipR = cubeBox(a * 0.18, a * 0.22, len);
+  lipR.translate(a * 0.38, a * 0.7, 0);
+  const carriage = cubeBox(a * 1.4, a * 0.7, a * 2.2);
+  carriage.translate(0, a * 0.7, 0);
+  return merge([rail, lipL, lipR, carriage]);
+}
+
+function wheelGeo(od: number, bore: number, t: number): BufferGeometry {
+  const tire = new CylinderGeometry(od / 2, od / 2, t, 40);
+  const hub = new CylinderGeometry(od / 5, od / 5, t + 2, 20);
+  const boreC = new CylinderGeometry(bore / 2, bore / 2, t + 4, 16);
+  void boreC;
+  const spokes: BufferGeometry[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    const sp = cubeBox(od * 0.32, t * 0.4, t * 0.22);
+    sp.translate(Math.cos(a) * od * 0.22, t * 0.3, Math.sin(a) * od * 0.22);
+    sp.rotateY(-a);
+    spokes.push(sp);
+  }
+  return merge([tire, hub, ...spokes]);
+}
+
+function pipeGeo(od: number, id: number, len: number): BufferGeometry {
+  const outer = new CylinderGeometry(od / 2, od / 2, len, 28);
+  const inner = new CylinderGeometry(id / 2, id / 2, len * 1.02, 20);
+  void inner;
+  const lip = new CylinderGeometry(od / 2 + 1.2, od / 2 + 1.2, 3, 28);
+  lip.translate(0, len / 2 - 1.5, 0);
+  return merge([outer, lip]);
+}
+
+function servoGeo(w: number, h: number, t: number): BufferGeometry {
+  const body = cubeBox(w, t, h);
+  const tab = cubeBox(w + 10, 2.2, h * 0.7);
+  tab.translate(0, t * 0.55, 0);
+  const spline = new CylinderGeometry(2.3, 2.3, 4, 16);
+  spline.translate(w * 0.22, t + 2, 0);
+  const horn = cubeBox(18, 1.6, 4);
+  horn.translate(w * 0.22, t + 4.5, 0);
+  return merge([body, tab, spline, horn]);
+}
+
+function helicalGeo(z: number, m: number, bore: number, t: number): BufferGeometry {
+  const a = spurGeo(z, m, bore, t / 2);
+  a.translate(0, -t / 4, 0);
+  const b = spurGeo(z, m, bore, t / 2);
+  b.rotateY(Math.PI / z);
+  b.translate(0, t / 4, 0);
+  return merge([a, b]);
+}
+
+function internalGeo(z: number, m: number, t: number): BufferGeometry {
+  const rA = ((z + 4) * m) / 2;
+  const shape = new Shape();
+  shape.absarc(0, 0, rA, 0, Math.PI * 2, false);
+  const inner = spurShape(z, m, 0);
+  shape.holes.push(inner);
+  return extrude(shape, t);
+}
+
+function insertGeo(od: number, id: number, h: number): BufferGeometry {
+  const body = new CylinderGeometry(od / 2, od / 2, h, 8);
+  const knurl: BufferGeometry[] = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const k = cubeBox(od * 0.12, h * 0.7, od * 0.08);
+    k.translate(Math.cos(a) * od * 0.48, 0, Math.sin(a) * od * 0.48);
+    knurl.push(k);
+  }
+  void id;
+  return merge([body, ...knurl]);
+}
+
+function cornerGeo(a: number): BufferGeometry {
+  const cube = cubeBox(a, a, a);
+  const bosses: BufferGeometry[] = [];
+  for (const [x, y, z] of [
+    [a * 0.28, a * 0.5, 0],
+    [0, a * 0.5, a * 0.28],
+    [0, a * 0.28, 0],
+  ] as [number, number, number][]) {
+    const c = new CylinderGeometry(2.6, 2.6, a * 0.7, 12);
+    if (z !== 0) c.rotateX(Math.PI / 2);
+    if (x !== 0) c.rotateZ(Math.PI / 2);
+    c.translate(x, y, z);
+    bosses.push(c);
+  }
+  return merge([cube, ...bosses]);
+}
+
+function fanGeo(od: number, t: number): BufferGeometry {
+  const frame = cubeBox(od, t, od);
+  const hub = new CylinderGeometry(od * 0.12, od * 0.12, t + 1, 16);
+  hub.translate(0, t / 2, 0);
+  const blades: BufferGeometry[] = [];
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2;
+    const b = cubeBox(od * 0.38, t * 0.4, t * 0.18);
+    b.translate(Math.cos(a) * od * 0.22, t * 0.5, Math.sin(a) * od * 0.22);
+    b.rotateY(-a);
+    blades.push(b);
+  }
+  return merge([frame, hub, ...blades]);
+}
+
+function chainGeo(len: number, t: number): BufferGeometry {
+  const links: BufferGeometry[] = [];
+  const pitch = 12.7;
+  const n = Math.max(3, Math.round(len / pitch));
+  for (let i = 0; i < n; i++) {
+    const x = -len / 2 + i * pitch + pitch / 2;
+    const ring = new TorusGeometry(3.4, 1.1, 8, 12);
+    ring.rotateY(i % 2 ? Math.PI / 2 : 0);
+    ring.translate(x, t / 2, 0);
+    links.push(ring);
+  }
+  return merge(links);
+}
+
+function batteryGeo(w: number, h: number): BufferGeometry {
+  const cradle = cubeBox(w, 6, h);
+  const left = new CylinderGeometry(9, 9, w * 0.9, 20);
+  left.rotateZ(Math.PI / 2);
+  left.translate(0, 12, -h * 0.22);
+  const right = new CylinderGeometry(9, 9, w * 0.9, 20);
+  right.rotateZ(Math.PI / 2);
+  right.translate(0, 12, h * 0.22);
+  const wallL = cubeBox(3, 16, h);
+  wallL.translate(-w / 2 + 1.5, 6, 0);
+  const wallR = cubeBox(3, 16, h);
+  wallR.translate(w / 2 - 1.5, 6, 0);
+  return merge([cradle, left, right, wallL, wallR]);
+}
+
+function arduinoGeo(): BufferGeometry {
+  const board = cubeBox(68.6, 1.6, 53.4);
+  const usb = cubeBox(16, 4, 12);
+  usb.translate(-68.6 / 2 + 8, 2, 53.4 / 2 - 8);
+  const headers = cubeBox(48, 8, 5);
+  headers.translate(4, 5, -53.4 / 2 + 8);
+  const holes: BufferGeometry[] = [];
+  for (const [x, z] of [
+    [-30.5, 21],
+    [24, 21],
+    [-30.5, -24],
+    [20, -24],
+  ] as [number, number][]) {
+    const b = new CylinderGeometry(1.6, 1.6, 3, 10);
+    b.translate(x, 1.6, z);
+    holes.push(b);
+  }
+  return merge([board, usb, headers, ...holes]);
+}
+
+function planetaryGeo(sun: number, ring: number, m: number, t: number): BufferGeometry {
+  const sunG = spurGeo(sun, m, 5, t);
+  const planetZ = Math.max(8, Math.round((ring - sun) / 2));
+  const orbit = ((sun + planetZ) * m) / 2;
+  const planets: BufferGeometry[] = [];
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    const p = spurGeo(planetZ, m, 3, t * 0.9);
+    p.translate(Math.cos(a) * orbit, 0, Math.sin(a) * orbit);
+    planets.push(p);
+  }
+  const ringG = internalGeo(ring, m, t * 0.7);
+  ringG.translate(0, t * 0.1, 0);
+  return merge([sunG, ringG, ...planets]);
+}
+
 
 
 

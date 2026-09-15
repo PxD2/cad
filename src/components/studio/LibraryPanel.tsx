@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { searchThingsLive } from "@/lib/ai/search-things";
 import { LIBRARY, LIB_GROUPS } from "@/lib/cad/library";
+import { KITS } from "@/lib/cad/kits";
 import { useCad } from "@/lib/cad/store";
 import { searchThings, THINGIVERSE, THING_TAGS, type ThingHit } from "@/lib/cad/thingiverse";
 import { Btn, Chip, Field, Label } from "./chrome";
@@ -18,8 +19,9 @@ export function LibraryPanel() {
   const setThingsQuery = useCad((s) => s.setThingsQuery);
   const stampThing = useCad((s) => s.stampThing);
   const loadThing = useCad((s) => s.loadThing);
+  const loadKit = useCad((s) => s.loadKit);
   const [q, setQ] = useState("");
-  const [group, setGroup] = useState<(typeof LIB_GROUPS)[number] | "All">("Gears");
+  const [group, setGroup] = useState<(typeof LIB_GROUPS)[number] | "All">("All");
   const [tag, setTag] = useState<(typeof THING_TAGS)[number] | "All">("All");
   const [live, setLive] = useState<ThingHit[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -68,9 +70,23 @@ export function LibraryPanel() {
       <div>
         <h2 className="text-sm font-semibold text-fg">Open parts</h2>
         <p className="mt-1 text-sm text-muted">
-          Pick a brush, then stamp or stack it on the bed. Thingiverse classics are real PXD2 solids — same class as the
-          NEMA face — then drag them.
+          Every shop class: gears, belts, shafts, rails, electronics. Stamp two pulleys, then Easy belt — the loop snaps to
+          whole teeth and follows the pulleys.
         </p>
+      </div>
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-faint">Assemblies</h3>
+        <div className="mt-1.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {KITS.map((kit) => (
+            <div key={kit.id} className="rounded-sm border border-border bg-raised p-2">
+              <p className="text-sm font-medium text-fg">{kit.name}</p>
+              <p className="font-mono text-xs text-faint">{kit.hint}</p>
+              <Btn kind="primary" className="mt-1.5 min-h-11 w-full" onClick={() => loadKit(kit.id)}>
+                Assemble
+              </Btn>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="flex flex-wrap gap-1.5">
         <Chip active={libSource === "beni"} onClick={() => setLibSource("beni")}>

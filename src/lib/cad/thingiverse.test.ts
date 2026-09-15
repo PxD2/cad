@@ -82,7 +82,7 @@ describe("thingiverse", () => {
   });
 
   it("builds geometry for the dedicated shop solids", () => {
-    for (const kind of ["gopro", "picam", "arm", "collar", "xyzcube", "headhook", "spool", "hull", "nema"] as const) {
+    for (const kind of ["gopro", "picam", "arm", "collar", "xyzcube", "headhook", "spool", "hull", "nema", "belt", "shaft", "servo", "helical", "fan", "wheel"] as const) {
       const geo = geometryForSolid({ kind, size: 17, a: 20 });
       const pos = geo.getAttribute("position");
       assert.ok(pos && pos.count > 8, kind);

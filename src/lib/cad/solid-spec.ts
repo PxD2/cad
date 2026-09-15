@@ -50,7 +50,25 @@ export type SolidKind =
   | "headhook"
   | "spool"
   | "snapbox"
-  | "ledclip";
+  | "ledclip"
+  | "belt"
+  | "shaft"
+  | "leadscrew"
+  | "sprocket"
+  | "spring"
+  | "rail"
+  | "wheel"
+  | "pipe"
+  | "servo"
+  | "helical"
+  | "internal"
+  | "insert"
+  | "corner"
+  | "fan"
+  | "chain"
+  | "battery"
+  | "arduino"
+  | "planetary";
 
 export const SOLID_KINDS: SolidKind[] = [
   "plate",
@@ -105,6 +123,24 @@ export const SOLID_KINDS: SolidKind[] = [
   "spool",
   "snapbox",
   "ledclip",
+  "belt",
+  "shaft",
+  "leadscrew",
+  "sprocket",
+  "spring",
+  "rail",
+  "wheel",
+  "pipe",
+  "servo",
+  "helical",
+  "internal",
+  "insert",
+  "corner",
+  "fan",
+  "chain",
+  "battery",
+  "arduino",
+  "planetary",
 ];
 
 export type SolidSpec = {
@@ -128,17 +164,23 @@ export type SolidSpec = {
 };
 
 export function envelopeOf(s: SolidSpec): { width: number; height: number; thick: number } {
-  if (s.kind === "spur" || s.kind === "herringbone" || s.kind === "bevel") {
+  if (s.kind === "spur" || s.kind === "herringbone" || s.kind === "bevel" || s.kind === "helical") {
     const z = s.teeth ?? 20;
     const m = s.module ?? 2;
     const d = (z + 2) * m;
     return { width: d, height: d, thick: s.t ?? 8 };
   }
-  if (s.kind === "compound") {
+  if (s.kind === "compound" || s.kind === "planetary") {
     const m = s.module ?? 2;
     const z = Math.max(s.teeth ?? 20, s.teeth2 ?? 40);
     const d = (z + 2) * m;
-    return { width: d, height: d, thick: s.t ?? 16 };
+    return { width: d, height: d, thick: s.t ?? (s.kind === "planetary" ? 10 : 16) };
+  }
+  if (s.kind === "internal") {
+    const z = s.teeth ?? 40;
+    const m = s.module ?? 2;
+    const d = (z + 4) * m;
+    return { width: d, height: d, thick: s.t ?? 8 };
   }
   if (s.kind === "worm") {
     const m = s.module ?? 2;
@@ -151,11 +193,21 @@ export function envelopeOf(s: SolidSpec): { width: number; height: number; thick
     const m = s.module ?? 2;
     return { width: z * Math.PI * m + 8, height: 2.5 * m + (s.t ?? 8), thick: s.t ?? 8 };
   }
-  if (s.kind === "pulley" || s.kind === "idler") {
+  if (s.kind === "pulley" || s.kind === "idler" || s.kind === "sprocket") {
     const z = s.teeth ?? 20;
+    const p = s.pitch ?? (s.kind === "sprocket" ? 12.7 : 2);
+    const d = (z * p) / Math.PI + (s.kind === "sprocket" ? 12 : 8);
+    return { width: d, height: d, thick: s.t ?? (s.kind === "sprocket" ? 8 : 8) };
+  }
+  if (s.kind === "belt") {
+    if ((s.teeth ?? 0) <= 0 || (s.pitch ?? 0) <= 0) {
+      const d = s.od ?? 80;
+      return { width: d, height: d, thick: s.t ?? 13 };
+    }
+    const z = s.teeth ?? 100;
     const p = s.pitch ?? 2;
-    const d = (z * p) / Math.PI + 8;
-    return { width: d, height: d, thick: s.t ?? 8 };
+    const d = (z * p) / Math.PI + 6;
+    return { width: d, height: d, thick: s.t ?? 6 };
   }
   if (s.kind === "bearing" || s.kind === "washer" || s.kind === "disk" || s.kind === "grill") {
     const od = s.od ?? (s.kind === "grill" ? 40 : s.kind === "disk" ? 90 : 22);
@@ -171,9 +223,9 @@ export function envelopeOf(s: SolidSpec): { width: number; height: number; thick
     const b = s.b ?? 40;
     return { width: a, height: b, thick: s.t ?? 4 };
   }
-  if (s.kind === "standoff" || s.kind === "nut" || s.kind === "bolt" || s.kind === "spinner") {
-    const od = s.od ?? (s.kind === "spinner" ? 18 : 8);
-    return { width: od, height: od, thick: s.height ?? (s.kind === "nut" ? 4 : s.kind === "spinner" ? 28 : 12) };
+  if (s.kind === "standoff" || s.kind === "nut" || s.kind === "bolt" || s.kind === "spinner" || s.kind === "insert") {
+    const od = s.od ?? (s.kind === "spinner" ? 18 : s.kind === "insert" ? 5 : 8);
+    return { width: od, height: od, thick: s.height ?? (s.kind === "nut" ? 4 : s.kind === "spinner" ? 28 : s.kind === "insert" ? 6 : 12) };
   }
   if (s.kind === "knob" || s.kind === "mushroom") {
     const od = s.od ?? (s.kind === "mushroom" ? 28 : 32);
@@ -223,6 +275,44 @@ export function envelopeOf(s: SolidSpec): { width: number; height: number; thick
   if (s.kind === "arm") return { width: s.a ?? 50, height: s.b ?? 24, thick: s.t ?? 16 };
   if (s.kind === "nameplate") return { width: s.width ?? 80, height: s.height ?? 30, thick: s.t ?? 8 };
   if (s.kind === "spool") return { width: s.width ?? 80, height: s.height ?? 70, thick: s.t ?? 16 };
+  if (s.kind === "shaft" || s.kind === "leadscrew" || s.kind === "pipe") {
+    const od = s.od ?? (s.kind === "pipe" ? 21.3 : s.kind === "leadscrew" ? 8 : 8);
+    const len = s.length ?? 80;
+    return { width: od, height: od, thick: len };
+  }
+  if (s.kind === "spring") {
+    const od = s.od ?? 12;
+    return { width: od, height: od, thick: s.length ?? 30 };
+  }
+  if (s.kind === "rail") {
+    const w = s.a ?? 12;
+    return { width: w, height: w + 4, thick: s.length ?? 100 };
+  }
+  if (s.kind === "wheel") {
+    const od = s.od ?? 80;
+    return { width: od, height: od, thick: s.t ?? 12 };
+  }
+  if (s.kind === "servo") {
+    const w = s.width ?? 23;
+    return { width: w, height: s.height ?? 12.5, thick: s.t ?? 22 };
+  }
+  if (s.kind === "corner") {
+    const a = s.a ?? 20;
+    return { width: a, height: a, thick: a };
+  }
+  if (s.kind === "fan") {
+    const od = s.od ?? 40;
+    return { width: od, height: od, thick: s.t ?? 10 };
+  }
+  if (s.kind === "chain") {
+    return { width: s.length ?? 50, height: 12, thick: 8 };
+  }
+  if (s.kind === "battery") {
+    return { width: s.width ?? 40, height: s.height ?? 22, thick: s.t ?? 20 };
+  }
+  if (s.kind === "arduino") {
+    return { width: s.width ?? 68.6, height: s.height ?? 53.4, thick: s.t ?? 4 };
+  }
   if (s.kind === "plate") return { width: s.width ?? 80, height: s.height ?? 60, thick: s.t ?? 6 };
   return { width: s.width ?? 80, height: s.height ?? 60, thick: s.t ?? 6 };
 }
@@ -241,7 +331,18 @@ export function parseBeniPragma(src: string): SolidSpec | null {
 }
 
 export function isGearKind(k: SolidKind | undefined) {
-  return k === "spur" || k === "herringbone" || k === "compound" || k === "bevel" || k === "rack" || k === "pulley" || k === "idler";
+  return (
+    k === "spur" ||
+    k === "herringbone" ||
+    k === "compound" ||
+    k === "bevel" ||
+    k === "rack" ||
+    k === "pulley" ||
+    k === "idler" ||
+    k === "helical" ||
+    k === "internal" ||
+    k === "sprocket"
+  );
 }
 
 export function scadPragma(solid: SolidSpec) {

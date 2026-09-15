@@ -26,6 +26,8 @@ import {
 } from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { LAYER_COLORS, nearestInst, sitOffsetY } from "@/lib/cad/assembly";
+import { beltView } from "@/lib/cad/belt-view";
+import { wrapBelt } from "@/lib/cad/belt";
 import { importFile } from "@/lib/cad/io";
 import { brushInst } from "@/lib/cad/laser";
 import { laserView } from "@/lib/cad/laser-view";
@@ -46,6 +48,7 @@ export function Viewport({ part }: { part: Part }) {
   const tool = useCad((s) => s.tool);
   const unit = useCad((s) => s.unit);
   const laserOn = useCad((s) => s.laserOn);
+  const belts = useCad((s) => s.belts);
   const api = useRef<{
     controls: OrbitControls;
     camera: PerspectiveCamera;
@@ -99,6 +102,9 @@ export function Viewport({ part }: { part: Part }) {
     const lasers = new Group();
     lasers.name = "lasers";
     scene.add(lasers);
+    const beltGroup = new Group();
+    beltGroup.name = "belts";
+    scene.add(beltGroup);
     api.current = { controls, camera, renderer };
     (el as HTMLDivElement & { __scene?: Scene }).__scene = scene;
 
@@ -191,6 +197,10 @@ export function Viewport({ part }: { part: Part }) {
         if (id) s.eraseInst(id);
         return;
       }
+      if (s.tool === "belt") {
+        if (id) s.clickBelt(id);
+        return;
+      }
       if (s.tool === "select" || s.tool === "move") {
         s.selectInst(id);
         return;
@@ -234,6 +244,11 @@ export function Viewport({ part }: { part: Part }) {
       } else if (ev.key === "a" || ev.key === "A") {
         ev.preventDefault();
         useCad.getState().alignLasers();
+      } else if (ev.key === "b" || ev.key === "B") {
+        ev.preventDefault();
+        const cur = useCad.getState();
+        if (cur.tool === "belt") cur.beltPair();
+        else cur.setTool("belt");
       }
     };
     const onWheel = (ev: WheelEvent) => {
@@ -301,11 +316,13 @@ export function Viewport({ part }: { part: Part }) {
     const assy = scene.getObjectByName("assy") as Group | undefined;
     const dims = scene.getObjectByName("dims") as Group | undefined;
     const lasers = scene.getObjectByName("lasers") as Group | undefined;
+    const beltGroup = scene.getObjectByName("belts") as Group | undefined;
     if (!group || !assy) return;
     clearGroup(group);
     clearGroup(assy);
     if (dims) clearGroup(dims);
     if (lasers) clearGroup(lasers);
+    if (beltGroup) clearGroup(beltGroup);
     const ghost = scans.some((p) => p.visible);
     if (instances.length === 0) {
       addPartMesh(group, part, 0xc5cdd4, ghost, false);
@@ -328,8 +345,15 @@ export function Viewport({ part }: { part: Part }) {
         const built = laserView(instances, selId, unit);
         while (built.children.length) lasers.add(built.children[0]);
       }
+      if (beltGroup) {
+        belts.forEach((b, i) => {
+          const path = wrapBelt(instances, b);
+          const mesh = beltView(path, i === 0);
+          while (mesh.children.length) beltGroup.add(mesh.children[0]);
+        });
+      }
     }
-  }, [part, scans, instances, selId, unit, laserOn]);
+  }, [part, scans, instances, selId, unit, laserOn, belts]);
 
   useEffect(() => {
     const el = host.current as (HTMLDivElement & { __scene?: Scene }) | null;

@@ -3,6 +3,7 @@ import { PaintBar } from "./PaintBar";
 import { Maximize2, RotateCcw, RotateCw, ZoomIn, ZoomOut } from "lucide-react";
 import type { ReactNode } from "react";
 import { instBox } from "@/lib/cad/assembly";
+import { beltCaption, wrapBelt } from "@/lib/cad/belt";
 import { brushInst, laserCaption } from "@/lib/cad/laser";
 import { plyCount } from "@/lib/cad/scan";
 import { useCad } from "@/lib/cad/store";
@@ -18,6 +19,7 @@ export function Hud() {
   const n = instances.length;
   const tool = useCad((s) => s.tool);
   const laserOn = useCad((s) => s.laserOn);
+  const belts = useCad((s) => s.belts);
   const vis = scans.filter((p) => p.visible);
   const pts = vis.reduce((sum, p) => sum + plyCount(p.verts), 0);
   const sel = instances.find((it) => it.id === selId) ?? null;
@@ -25,6 +27,8 @@ export function Hud() {
   const laser = laserOn
     ? laserCaption(instances.length ? instances : [brushInst(part)], instances.length ? selId : "brush")
     : "";
+  const belt = belts[0] ? wrapBelt(instances, belts[0]) : null;
+  const beltText = belt ? beltCaption(belt) : "";
   return (
     <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-3">
       <div className="pointer-events-none flex items-start justify-between">
@@ -42,6 +46,12 @@ export function Hud() {
           {laser && (
             <div className="rounded-sm border border-border bg-bg/80 px-2 py-1 font-mono text-xs text-steel">
               {laser}
+            </div>
+          )}
+          {beltText && (
+            <div className="rounded-sm border border-border bg-bg/80 px-2 py-1 font-mono text-xs text-steel">
+              {beltText}
+              {belts.length > 1 ? ` · +${belts.length - 1}` : ""}
             </div>
           )}
           {vis.length > 0 && (
@@ -75,7 +85,8 @@ export function Hud() {
           {tool === "stack" && "Click to stack on top"}
           {tool === "move" && "Drag · scroll lift · side btn flip / rot · L laser"}
           {tool === "erase" && "Click a layer to erase"}
-          {tool === "select" && "Click a layer · L laser · A align holes"}
+          {tool === "select" && "Click a layer · L laser · A align holes · B belt"}
+          {tool === "belt" && "Click pulley A, then pulley B — belt wraps and snaps to teeth"}
         </p>
       </div>
       <CamPip />
