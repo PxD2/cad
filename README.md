@@ -17,6 +17,7 @@ lasers, belts, scan, and export all run in the browser.
 
 - **Ask** — type or speak a part. Local parser or Grok builds a real solid.
 - **Every class of part** — gears (spur, helical, herringbone, bevel, worm, internal, planetary), GT2/HTD/MXL/V belts, pulleys, sprockets, shafts, T8, rails, wheels, servos, fans, 2020, fasteners, Gridfinity, electronics.
+- **Motors** — tiny whoop 0603 through 5″ 2207, NEMA hybrid bodies, RS cans, N20/GA37 gearmotors, MY1020 e-bike cans, **Vevor 48V 3000 watt** (MY1020D Ø107 × 135 · Ø12 · T8F-11T), 10″/12″ 3000W hubs. Real solids, not lookalikes.
 - **Stamp / stack / move** — layers on the bed like paint. Drag, arrows, scroll-wheel lift with magnet to nearby tops.
 - **Easy belt** — click two pulleys (or **Easy belt**). A closed loop wraps them, snaps to whole teeth, and follows when you drag. GT2, GT3, HTD 3M/5M, T5, MXL, V-belt A. `B` is the belt tool.
 - **Flip / rotate** — gamer-mouse side buttons (back = flip 90°, forward = rotate 90°), or F / R.
@@ -37,7 +38,7 @@ npm run dev
 
 ## Voice
 
-“easy belt”, “belt them”, “stamp”, “stack”, “laser”, “align holes”, “flip”,
+“easy belt”, “vevor 3000”, “stamp 2207”, “smallest drone motor”, “laser”, “align holes”, “flip”,
 “rotate 90”, “thingiverse for nema 17”, “demo stack”, “use inches”.
 
 ## License

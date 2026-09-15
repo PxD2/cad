@@ -6,7 +6,7 @@ export type Kit = {
   id: string;
   name: string;
   hint: string;
-  group: "Belts" | "Drive" | "Frames" | "Motion";
+  group: "Belts" | "Drive" | "Frames" | "Motion" | "Motors";
   build: () => { instances: Inst[]; belts: BeltLoop[] };
 };
 
@@ -87,11 +87,38 @@ function tslotCorner() {
   return { instances: [a, b, br], belts: [] as BeltLoop[] };
 }
 
+function vevorKart() {
+  const motor = makeInst(must("vevor-48-3000"), 0, 0, 0);
+  return { instances: [motor], belts: [] as BeltLoop[] };
+}
+
+function drone2207() {
+  const motor = makeInst(must("motor-2207"), 0, 0, 0);
+  return { instances: [motor], belts: [] as BeltLoop[] };
+}
+
+function tinyWhoop() {
+  const a = makeInst(must("motor-0603"), -18, 0, 0);
+  const b = makeInst(must("motor-0802"), 0, 0, 0);
+  const c = makeInst(must("motor-1103"), 18, 0, 0);
+  return { instances: [a, b, c], belts: [] as BeltLoop[] };
+}
+
+function stepperDrive() {
+  const body = makeInst(must("stepper-17-40"), 0, 0, 0);
+  const pulley = makeInst(must("gt2-20-b5"), 0, body.part.thick, 0);
+  return { instances: [body, pulley], belts: [] as BeltLoop[] };
+}
+
 export const KITS: Kit[] = [
   { id: "gt2-drive", name: "Easy GT2 belt", hint: "NEMA 17 · 20T · 40T · closed belt", group: "Belts", build: easyGt2 },
   { id: "gt2-idler", name: "GT2 + idler", hint: "three-wheel wrap", group: "Belts", build: gt2Idler },
   { id: "htd-drive", name: "HTD 5M drive", hint: "12T · 24T · 5 mm pitch", group: "Belts", build: htdDrive },
   { id: "nema-pulley", name: "NEMA 17 drive", hint: "face · shaft · 20T", group: "Drive", build: nemaPulley },
+  { id: "stepper-drive", name: "NEMA 17 stepper", hint: "hybrid body · GT2 20T", group: "Motors", build: stepperDrive },
+  { id: "tiny-whoop", name: "Tiny whoop cans", hint: "0603 · 0802 · 1103", group: "Motors", build: tinyWhoop },
+  { id: "drone-2207", name: "Drone 2207", hint: "5″ freestyle outrunner", group: "Motors", build: drone2207 },
+  { id: "vevor-kart", name: "Vevor 48V 3000W", hint: "MY1020D Ø107 · T8F-11T", group: "Motors", build: vevorKart },
   { id: "skate", name: "608 skate", hint: "bearing · shaft · wheel", group: "Motion", build: skate },
   { id: "compound-box", name: "Compound gearbox", hint: "plate · 20/60 · 608", group: "Drive", build: compoundBox },
   { id: "tslot-corner", name: "2020 corner", hint: "extrusion · L-bracket", group: "Frames", build: tslotCorner },

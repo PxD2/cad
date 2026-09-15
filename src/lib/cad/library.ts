@@ -1,10 +1,10 @@
-import type { Part } from "./types";
+import type { Hole, Part } from "./types";
 import { envelopeOf, scadPragma, type SolidKind, type SolidSpec } from "./solid-spec.ts";
 
 export type LibItem = {
   id: string;
   name: string;
-  group: "Gears" | "Compound" | "Motion" | "Belts" | "Drive" | "Hardware" | "Fasteners" | "Frames" | "Electronics" | "Shop";
+  group: "Gears" | "Compound" | "Motion" | "Belts" | "Drive" | "Motors" | "Hardware" | "Fasteners" | "Frames" | "Electronics" | "Shop";
   source: string;
   hint: string;
   solid: SolidSpec;
@@ -17,6 +17,7 @@ export const LIB_GROUPS: LibItem["group"][] = [
   "Motion",
   "Belts",
   "Drive",
+  "Motors",
   "Hardware",
   "Fasteners",
   "Frames",
@@ -288,7 +289,7 @@ function buildLibrary(): LibItem[] {
       }),
     );
   }
-  for (const size of [8, 11, 14, 17, 23] as const) {
+  for (const size of [8, 11, 14, 17, 23, 24, 34, 42] as const) {
     out.push(
       item(`nema-${size}`, `NEMA ${size} face`, "Frames", "IEC 60072 / NEMA", `stepper mount`, { kind: "nema", size, t: size >= 17 ? 5 : 4 }),
     );
@@ -508,6 +509,255 @@ function buildLibrary(): LibItem[] {
   out.push(item("batt-18650", "18650 holder ×2", "Electronics", "cell cradle", "2 cell", { kind: "battery", width: 40, height: 22, t: 20 }));
   out.push(item("uno-plate", "Arduino UNO plate", "Electronics", "R3 footprint", "68.6 × 53.4", { kind: "arduino", t: 4 }));
 
+  const drones: [string, number, number, number, number, number, string][] = [
+    ["0603", 8.5, 7, 1, 6.6, 3, "smallest whoop"],
+    ["0703", 9.2, 8, 1, 6.6, 3, "tiny whoop"],
+    ["0802", 10.5, 8, 1, 6.6, 2, "tiny whoop"],
+    ["1103", 14.2, 11, 1.5, 6.6, 3, "tiny whoop"],
+    ["1104", 14.4, 12, 1.5, 6.6, 4, "65 mm"],
+    ["1106", 14.6, 14, 1.5, 6.6, 6, "65 mm"],
+    ["1306", 17.2, 14, 2, 9, 6, "3″ light"],
+    ["1404", 18.2, 12, 2, 9, 4, "2″"],
+    ["1408", 18.6, 16, 2, 9, 8, "3″ light"],
+    ["1507", 19.4, 16, 2, 9, 7, "3″"],
+    ["1606", 20.5, 16, 2, 12, 6, "4″"],
+    ["1804", 23, 12, 2, 12, 4, "cinewhoop"],
+    ["1806", 23, 14, 2, 12, 6, "cinewhoop"],
+    ["2204", 27.9, 16, 3, 16, 4, "5″ light"],
+    ["2205", 27.9, 18, 3, 16, 5, "5″"],
+    ["2206", 27.9, 19, 4, 16, 6, "5″"],
+    ["2207", 27.9, 21, 4, 16, 7, "5″ freestyle"],
+    ["2208", 28.2, 22, 4, 16, 8, "5″ long"],
+    ["2306", 28.5, 20, 4, 16, 6, "5″"],
+    ["2407", 29.6, 21, 4, 16, 7, "6″"],
+    ["2408", 30, 22, 5, 16, 8, "6″"],
+    ["2506", 30.5, 20, 4, 16, 6, "6″"],
+    ["2806", 35, 20, 4, 16, 6, "7″"],
+    ["2807", 35.2, 22, 5, 19, 7, "7″"],
+    ["2808", 35.5, 24, 5, 19, 8, "7″ long"],
+    ["3110", 38.5, 26, 5, 19, 10, "8–10″"],
+    ["3115", 39, 32, 5, 19, 15, "10″"],
+    ["4108", 48, 26, 5, 25, 8, "cine"],
+    ["4214", 49.5, 32, 6, 25, 14, "X8 cine"],
+    ["5010", 59, 30, 6, 25, 10, "X8"],
+    ["5015", 59.5, 36, 6, 30, 15, "X8 long"],
+    ["5212", 61, 34, 6, 30, 12, "10″ lift"],
+    ["6354", 70, 42, 8, 30, 54, "heavy cine"],
+  ];
+  for (const [name, od, len, shaft, mount, stator, hint] of drones) {
+    out.push(
+      item(`motor-${name}`, `Drone ${name}`, "Motors", "BLDC outrunner", `${hint} · Ø${od} · Ø${shaft}`, {
+        kind: "motor",
+        size: 1,
+        od,
+        length: len,
+        bore: shaft,
+        t: Math.max(8, shaft * 3),
+        a: mount,
+        teeth: stator,
+      }),
+    );
+  }
+
+  const inrunners: [string, number, number, number, string][] = [
+    ["2830", 28, 30, 3.17, "inrunner"],
+    ["2847", 28, 47, 3.17, "inrunner"],
+    ["3650", 36, 50, 5, "e-skate"],
+    ["3674", 36, 74, 5, "e-skate"],
+    ["4074", 40, 74, 5, "e-skate"],
+    ["4082", 40, 82, 8, "e-skate"],
+    ["5065", 50, 65, 8, "hub-drive"],
+    ["6374", 63, 74, 8, "e-skate"],
+    ["80100", 80, 100, 10, "big BLDC"],
+  ];
+  for (const [name, od, len, shaft, hint] of inrunners) {
+    out.push(
+      item(`motor-in-${name}`, `Inrunner ${name}`, "Motors", "sensored BLDC", `${hint} · Ø${od} × ${len}`, {
+        kind: "motor",
+        size: 2,
+        od,
+        length: len,
+        bore: shaft,
+        t: 18,
+      }),
+    );
+  }
+
+  const brushed: [string, number, number, number, string][] = [
+    ["130", 20.4, 25, 2, "toy"],
+    ["180", 24, 27, 2, "hobby"],
+    ["370", 24.4, 30, 2, "hobby"],
+    ["385", 27.7, 38, 3.17, "RS-385"],
+    ["540", 36, 50, 3.17, "RS-540"],
+    ["550", 36, 50, 3.17, "RS-550"],
+    ["555", 36, 57, 3.17, "RS-555"],
+    ["775", 42, 66, 5, "RS-775"],
+    ["895", 48, 70, 5, "RS-895"],
+  ];
+  for (const [name, od, len, shaft, hint] of brushed) {
+    out.push(
+      item(`motor-dc-${name}`, `Brushed ${name}`, "Motors", "ferrite can", `${hint} · Ø${od} × ${len}`, {
+        kind: "motor",
+        size: 3,
+        od,
+        length: len,
+        bore: shaft,
+        t: name === "775" || name === "895" ? 18 : 12,
+      }),
+    );
+  }
+
+  out.push(
+    item("motor-n20", "N20 gearmotor", "Motors", "micro metal", "12 × 10 × 15 + box", {
+      kind: "motor",
+      size: 4,
+      od: 12,
+      length: 15,
+      a: 12,
+      b: 10,
+      height: 9,
+      bore: 3,
+      t: 10,
+    }),
+  );
+  out.push(
+    item("motor-n30", "N30 gearmotor", "Motors", "micro metal", "15 × 12", {
+      kind: "motor",
+      size: 4,
+      od: 15.5,
+      length: 20,
+      a: 15,
+      b: 12,
+      height: 11,
+      bore: 3,
+      t: 10,
+    }),
+  );
+  out.push(
+    item("motor-ga37-12", "GA37 12V gearmotor", "Motors", "37 mm planetary", "Ø37 × 54", {
+      kind: "motor",
+      size: 4,
+      od: 37,
+      length: 30,
+      a: 37,
+      b: 37,
+      height: 24,
+      bore: 6,
+      t: 16,
+    }),
+  );
+  out.push(
+    item("motor-jgy370", "JGY-370 worm gearmotor", "Motors", "worm box", "Ø25 × 67", {
+      kind: "motor",
+      size: 4,
+      od: 25,
+      length: 32,
+      a: 46,
+      b: 32,
+      height: 22,
+      bore: 6,
+      t: 14,
+    }),
+  );
+  out.push(
+    item("motor-5840", "5840-31ZY worm", "Motors", "high-torque worm", "Ø40 × 105", {
+      kind: "motor",
+      size: 4,
+      od: 40,
+      length: 55,
+      a: 58,
+      b: 40,
+      height: 32,
+      bore: 8,
+      t: 20,
+    }),
+  );
+
+  const steppers: [number, number, string][] = [
+    [8, 30, "20.4"],
+    [11, 32, "28.2"],
+    [14, 28, "35.2"],
+    [17, 13, "pancake"],
+    [17, 16, "slim pancake"],
+    [17, 20, "slim"],
+    [17, 34, "short"],
+    [17, 40, "std"],
+    [17, 48, "high-T"],
+    [17, 60, "long"],
+    [23, 41, "short"],
+    [23, 56, "std"],
+    [23, 76, "high-T"],
+    [23, 104, "long"],
+    [24, 56, "60 mm"],
+    [34, 80, "86 mm"],
+    [34, 150, "long"],
+    [42, 150, "110 mm"],
+  ];
+  for (const [nema, len, hint] of steppers) {
+    const d = nema === 8 ? 20.4 : nema === 11 ? 28.2 : nema === 14 ? 35.2 : nema === 23 ? 56.4 : nema === 24 ? 60 : nema === 34 ? 86 : nema === 42 ? 110 : 42.3;
+    const shaft = nema <= 14 ? 5 : nema === 17 ? 5 : nema === 23 ? 6.35 : nema === 24 ? 8 : nema === 34 ? 14 : 19;
+    out.push(
+      item(`stepper-${nema}-${len}`, `NEMA ${nema} × ${len}`, "Motors", "hybrid stepper body", `${hint} · Ø${shaft} shaft`, {
+        kind: "motor",
+        size: 7,
+        od: d,
+        length: len,
+        t: nema >= 34 ? 32 : 24,
+        a: nema,
+        bore: shaft,
+      }),
+    );
+  }
+
+  const ev: [string, string, number, number, number, number, string][] = [
+    ["my1016-350", "MY1016 36V 350W", 100, 105, 10, 9, "scooter · 36 volt"],
+    ["my1020-1000", "MY1020 48V 1000 watt", 107, 125, 12, 11, "T8F-11T · 48 volt"],
+    ["my1020-1500", "MY1020 48V 1500 watt", 107, 135, 12, 11, "T8F-11T · 48 volt"],
+    ["my1020-2000", "MY1020 48V 2000 watt", 107, 135, 12, 11, "T8F-11T · 48 volt"],
+    ["vevor-48-3000", "Vevor 48V 3000 watt", 107, 135, 12, 11, "MY1020D · T8F-11T · Ø12 · 48 volt 3000W"],
+    ["vevor-72-3000", "Vevor 72V 3000 watt", 107, 135, 12, 11, "MY1020 · 4900 rpm · 72 volt 3000W"],
+    ["bmc-48-500", "BM1418 48V 500 watt", 118, 95, 10, 0, "mid-drive can · 48 volt"],
+  ];
+  for (const [id, name, od, len, shaft, teeth, hint] of ev) {
+    out.push(
+      item(id, name, "Motors", "e-bike / go-kart BLDC", `${hint} · Ø${od} × ${len}`, {
+        kind: "motor",
+        size: 5,
+        od,
+        length: len,
+        bore: shaft,
+        t: 25,
+        a: 56,
+        b: 102,
+        teeth: teeth || 11,
+        pitch: 8,
+      }),
+    );
+  }
+
+  const hubs: [string, string, number, number, number, string][] = [
+    ["hub-65", "Hoverboard hub 6.5″", 165, 55, 12, "6.5″"],
+    ["hub-80", "Hoverboard hub 8″", 200, 60, 12, "8″"],
+    ["hub-10-1000", "E-bike hub 10″ 1000 watt", 255, 70, 12, "48V 1000W"],
+    ["hub-10-3000", "Vevor hub 10″ 3000 watt", 273, 90, 14, "48 volt 3000W"],
+    ["hub-12-3000", "Vevor hub 12″ 3000 watt", 305, 110, 14, "48 volt 3000W"],
+  ];
+  for (const [id, name, od, wide, axle, hint] of hubs) {
+    out.push(
+      item(id, name, "Motors", "direct-drive hub", `${hint} · Ø${od}`, {
+        kind: "motor",
+        size: 6,
+        od,
+        length: wide,
+        bore: axle,
+        t: 0,
+      }),
+    );
+  }
+
+  out.push(item("servo-ds3218", "Servo DS3218", "Electronics", "20 kg digital", "40 × 20 × 40.5", { kind: "servo", width: 40, height: 20, t: 40.5 }));
+  out.push(item("servo-40kg", "Servo 40 kg", "Electronics", "steering", "65 × 30 × 48", { kind: "servo", width: 65, height: 30, t: 48 }));
+
   const seen = new Set<string>();
   return out.filter((x) => {
     if (seen.has(x.id)) return false;
@@ -518,6 +768,68 @@ function buildLibrary(): LibItem[] {
 
 export const LIBRARY: LibItem[] = buildLibrary();
 
+export function holesForSolid(s: SolidSpec): Hole[] {
+  if (s.kind === "nema") return nemaMountHoles(s.size ?? 17);
+  if (s.kind === "motor") return motorMountHoles(s);
+  if (s.bore && s.bore > 0.2) return [{ x: 0, y: 0, d: s.bore }];
+  if (s.hole && s.hole > 0.2) return [{ x: 0, y: 0, d: s.hole }];
+  if (s.id && s.id > 0.2) return [{ x: 0, y: 0, d: s.id }];
+  return [];
+}
+
+function nemaMountHoles(size: number): Hole[] {
+  const pattern =
+    size === 8 ? 16 : size === 11 ? 23 : size === 14 ? 26 : size === 23 ? 47.14 : size === 24 ? 49.5 : size === 34 ? 69.6 : size === 42 ? 89 : 31;
+  const bore = size === 8 ? 16 : size === 23 || size === 24 ? 38.1 : size === 34 ? 73 : size === 42 ? 80 : 22;
+  const hole = size <= 14 ? 2.5 : size === 17 ? 3.2 : size >= 34 ? 5.5 : 5.2;
+  const p = pattern / 2;
+  return [
+    { x: 0, y: 0, d: bore },
+    { x: -p, y: -p, d: hole },
+    { x: p, y: -p, d: hole },
+    { x: p, y: p, d: hole },
+    { x: -p, y: p, d: hole },
+  ];
+}
+
+function motorMountHoles(s: SolidSpec): Hole[] {
+  const style = s.size ?? 1;
+  const shaft = s.bore ?? 4;
+  if (style === 7) return nemaMountHoles(s.a ?? 17);
+  if (style === 6) return [{ x: 0, y: 0, d: Math.max(shaft, 8) }];
+  if (style === 5) {
+    const footL = s.b ?? 102;
+    const footW = s.a ?? 56;
+    const hx = Math.max(12, footL * 0.42);
+    const hy = Math.max(10, footW * 0.35);
+    return [
+      { x: 0, y: 0, d: shaft },
+      { x: -hx, y: -hy, d: 6.6 },
+      { x: hx, y: -hy, d: 6.6 },
+      { x: hx, y: hy, d: 6.6 },
+      { x: -hx, y: hy, d: 6.6 },
+    ];
+  }
+  if (style === 4) {
+    const w = s.a ?? 12;
+    return [
+      { x: 0, y: 0, d: shaft },
+      { x: -w * 0.28, y: 0, d: 2.2 },
+      { x: w * 0.28, y: 0, d: 2.2 },
+    ];
+  }
+  const mount = s.a ?? 16;
+  const p = mount / 2;
+  const hole = mount < 10 ? 1.4 : mount < 18 ? 2.2 : 3.2;
+  return [
+    { x: 0, y: 0, d: shaft },
+    { x: -p, y: -p, d: hole },
+    { x: p, y: -p, d: hole },
+    { x: p, y: p, d: hole },
+    { x: -p, y: p, d: hole },
+  ];
+}
+
 export function libById(id: string) {
   return LIBRARY.find((x) => x.id === id) ?? null;
 }
@@ -525,9 +837,23 @@ export function libById(id: string) {
 export function libMatch(q: string) {
   const s = q.trim().toLowerCase();
   if (!s) return null;
+  if (/(smallest|tiniest|tiny whoop).*(motor|drone)|whoop motor/.test(s) || /smallest drone/.test(s)) {
+    return libById("motor-0603") ?? libById("motor-0802");
+  }
+  if (/vevor/.test(s) && /hub/.test(s) && /12/.test(s)) return libById("hub-12-3000");
+  if (/vevor/.test(s) && /hub/.test(s)) return libById("hub-10-3000");
+  if (/vevor/.test(s) && /72/.test(s)) return libById("vevor-72-3000");
+  if (/vevor/.test(s) && /3000/.test(s)) return libById("vevor-48-3000");
+  if (/3000/.test(s) && /(watt|\bw\b|48)/.test(s) && /hub/.test(s)) return libById("hub-10-3000");
+  if (/3000/.test(s) && /(watt|\bw\b)/.test(s) && /48/.test(s)) return libById("vevor-48-3000");
+  const words = s.split(/\s+/).filter(Boolean);
   return (
     LIBRARY.find((x) => x.id === s || x.name.toLowerCase() === s) ||
-    LIBRARY.find((x) => x.name.toLowerCase().includes(s) || x.id.includes(s.replace(/\s+/g, "-")))
+    LIBRARY.find((x) => x.id.includes(s.replace(/\s+/g, "-")) || x.name.toLowerCase().includes(s)) ||
+    LIBRARY.find((x) => {
+      const hay = `${x.id} ${x.name} ${x.hint} ${x.source} ${x.solid.kind} ${x.group}`.toLowerCase();
+      return words.every((w) => hay.includes(w) || (w === "watt" && hay.includes("w")) || (w === "volt" && hay.includes("v")));
+    })
   );
 }
 
@@ -538,7 +864,7 @@ export function partFromLib(item: LibItem): Part {
     width: env.width,
     height: env.height,
     thick: env.thick,
-    holes: item.solid.bore ? [{ x: 0, y: 0, d: item.solid.bore }] : [],
+    holes: holesForSolid(item.solid),
     tiles: null,
     ask: item.name,
     notes: [`${item.source} · ${item.hint}`],
@@ -553,7 +879,7 @@ export function partFromSolid(solid: SolidSpec, name: string = solid.kind): Part
     width: env.width,
     height: env.height,
     thick: env.thick,
-    holes: solid.bore ? [{ x: 0, y: 0, d: solid.bore }] : [],
+    holes: holesForSolid(solid),
     tiles: null,
     ask: name,
     notes: [`${solid.kind}`],

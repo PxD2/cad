@@ -25,13 +25,20 @@ export async function runShop(prompt: string) {
     });
     if (!res.ok) {
       s.pushLog(res.error);
+      if (libMatch(q)) {
+        const hit = libMatch(q)!;
+        s.dropLib(hit.id);
+        return;
+      }
       s.applySentence(q);
       return;
     }
     applyAct(res.act);
   } catch (e) {
     s.pushLog(e instanceof Error ? e.message : "Shop call failed.");
-    s.applySentence(q);
+    const hit = libMatch(q);
+    if (hit) s.dropLib(hit.id);
+    else s.applySentence(q);
   } finally {
     useCad.getState().setAsking(false);
   }

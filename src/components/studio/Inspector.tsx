@@ -231,7 +231,7 @@ function StackList() {
       </div>
       {instances.length === 0 ? (
         <p className="mt-1.5 text-sm text-muted">
-          Stamp parts, then Easy belt to wrap a GT2 drive. Layers pile like paint.
+          Stamp a motor (0603 whoop → Vevor 48V 3000W), then Easy belt to wrap a GT2 drive.
         </p>
       ) : (
         <ul className="mt-1.5 space-y-1">

@@ -81,5 +81,15 @@ function applyShopLocal(q: string) {
     if (hit) s.dropLib(hit.id);
     return true;
   }
+  if (cmd.t === "kit") {
+    s.loadKit(cmd.q);
+    return true;
+  }
+  if (cmd.t === "stamp-thing") return false;
+  const named = libMatch(q);
+  if (named && named.solid.kind === "motor") {
+    s.dropLib(named.id);
+    return true;
+  }
   return false;
 }

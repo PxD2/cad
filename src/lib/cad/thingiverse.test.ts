@@ -66,6 +66,14 @@ describe("thingiverse", () => {
 
   it("maps a loose query onto a real PXD2 solid", () => {
     assert.equal(twinForQuery("nema 17"), "nema-17");
+    assert.equal(twinForQuery("vevor 3000"), "vevor-48-3000");
+    assert.equal(twinForQuery("2207"), "motor-2207");
+    const vevor = partFromThing(searchThings("thing:3000")[0]);
+    assert.equal(vevor.solid?.kind, "motor");
+    assert.equal(vevor.solid?.od, 107);
+    const drone = partFromThing(searchThings("thing:2207")[0]);
+    assert.equal(drone.solid?.kind, "motor");
+    assert.equal(drone.name, "motor-2207");
     const p = partFromThing({
       id: "gh-1",
       thingId: null,
@@ -82,10 +90,25 @@ describe("thingiverse", () => {
   });
 
   it("builds geometry for the dedicated shop solids", () => {
-    for (const kind of ["gopro", "picam", "arm", "collar", "xyzcube", "headhook", "spool", "hull", "nema", "belt", "shaft", "servo", "helical", "fan", "wheel"] as const) {
-      const geo = geometryForSolid({ kind, size: 17, a: 20 });
+    for (const kind of ["gopro", "picam", "arm", "collar", "xyzcube", "headhook", "spool", "hull", "nema", "belt", "shaft", "servo", "helical", "fan", "wheel", "motor"] as const) {
+      const geo = geometryForSolid({ kind, size: kind === "motor" ? 5 : 17, a: 20, od: kind === "motor" ? 107 : undefined, length: 40, bore: 12, t: 25 });
       const pos = geo.getAttribute("position");
       assert.ok(pos && pos.count > 8, kind);
+    }
+    for (const style of [1, 2, 3, 4, 5, 6, 7]) {
+      const geo = geometryForSolid({
+        kind: "motor",
+        size: style,
+        od: style === 6 ? 165 : style === 7 ? 42.3 : 28,
+        length: style === 5 ? 135 : 20,
+        bore: 5,
+        t: 12,
+        a: style === 7 ? 17 : 16,
+        b: 102,
+        teeth: 7,
+      });
+      const pos = geo.getAttribute("position");
+      assert.ok(pos && pos.count > 24, `motor style ${style}`);
     }
   });
 });

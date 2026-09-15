@@ -14,7 +14,7 @@ export type ThingHit = {
   hint: string;
 };
 
-export const THING_TAGS = ["Gears", "Motion", "Belts", "Hardware", "Mounts", "Organization", "Calibration", "Electronics"] as const;
+export const THING_TAGS = ["Gears", "Motion", "Belts", "Hardware", "Mounts", "Organization", "Calibration", "Electronics", "Motors"] as const;
 
 function tv(
   thingId: number,
@@ -126,6 +126,16 @@ export const THINGIVERSE: ThingHit[] = [
   tv(14243, "MGN12 rail 100", "jsheares", "CC-BY", "Motion", "mgn12-100", "linear"),
   tv(28144, "Wheel Ø80", "thieums", "CC-BY", "Motion", "wheel-80", "608 hub"),
   tv(9136, "Sprocket 08B 15T", "emmett", "CC-BY", "Motion", "sprocket-08b-15", "roller"),
+  tv(802, "Drone 0802", "PXD2", "CC-BY", "Motors", "motor-0802", "tiny whoop · Ø10.5"),
+  tv(603, "Drone 0603", "PXD2", "CC-BY", "Motors", "motor-0603", "smallest whoop"),
+  tv(1103, "Drone 1103", "PXD2", "CC-BY", "Motors", "motor-1103", "tiny whoop · Ø14.2"),
+  tv(2207, "Drone 2207", "PXD2", "CC-BY", "Motors", "motor-2207", "5″ freestyle · Ø27.9"),
+  tv(775, "RS-775 can", "PXD2", "CC-BY", "Motors", "motor-dc-775", "Ø42 × 66 · Ø5"),
+  tv(2016, "N20 gearmotor", "PXD2", "CC-BY", "Motors", "motor-n20", "micro metal"),
+  tv(1020, "MY1020 48V 1000W", "PXD2", "CC-BY", "Motors", "my1020-1000", "T8F-11T · Ø107"),
+  tv(3000, "Vevor 48V 3000 watt", "PXD2", "CC-BY", "Motors", "vevor-48-3000", "MY1020D · Ø107 × 135 · Ø12"),
+  tv(30141, "NEMA 17 stepper body", "nophead", "CC-BY", "Motors", "stepper-17-40", "42.3 × 40 · Ø5"),
+  tv(2550, "Vevor hub 10″ 3000W", "PXD2", "CC-BY", "Motors", "hub-10-3000", "48 volt hub"),
 ];
 
 export function parseThingRef(raw: string): number | null {

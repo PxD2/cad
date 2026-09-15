@@ -132,6 +132,10 @@ export function parseCommand(raw: string): Cmd {
 
   if (/demo (?:stack|assembly)/.test(text)) return { t: "paint", op: "demo" };
   if (/easy belt|belt drive|demo belt|gt2 drive/.test(text)) return { t: "easy-belt" };
+  if (/easy vevor|vevor (?:drive|kit|kart|3000)/.test(text)) return { t: "kit", q: "vevor" };
+  if (/(?:tiny )?whoop kit|smallest drone/.test(text)) return { t: "kit", q: "whoop" };
+  if (/2207 kit|drone 2207 kit/.test(text)) return { t: "kit", q: "2207" };
+  if (/stepper kit|nema 17 stepper/.test(text)) return { t: "kit", q: "stepper-drive" };
   if (/^(?:belt them|belt (?:the )?pair|put a belt|gt2 belt|htd belt|wrap (?:a )?belt)$/.test(text)) return { t: "belt-pair" };
   if (/belt tool/.test(text)) return { t: "tool", tool: "belt" };
   if (/^(?:kit|assembly kit|load kit)\s+(.+)/.test(text)) {
@@ -181,6 +185,17 @@ export function parseCommand(raw: string): Cmd {
   if (lib) return { t: "lib", q: lib[1].trim() };
   const stampThing = text.match(/stamp (?:a |the )?(?:thing )?(.+)/);
   if (stampThing && !/brush|it$/.test(stampThing[1])) return { t: "stamp-thing", q: stampThing[1].trim() };
+
+  if (
+    /\b(?:vevor|my1020|outrunner|inrunner|gearmotor|rs-?(?:130|180|370|385|540|550|555|775|895)|n20|n30|ga37|whoop)\b/.test(text) ||
+    /\b(?:drone|stepper)\s+\d/.test(text) ||
+    /\bmotor[- ]?\d/.test(text) ||
+    /\b(?:0802|0603|1103|2207|5010|6354)\b/.test(text)
+  ) {
+    const q = text.replace(/^(?:load|drop|get|insert|open|stamp(?: a| the)?)\s+/, "").trim();
+    if (/stamp/.test(text)) return { t: "stamp-thing", q };
+    return { t: "lib", q };
+  }
 
   if (/^(?:grok|generate|make me|design|build me)\b/.test(text) || /\bwith grok\b/.test(text)) {
     return { t: "generate", text: raw.trim() };

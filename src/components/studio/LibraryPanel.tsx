@@ -35,7 +35,7 @@ export function LibraryPanel() {
     });
   }, [q, group]);
 
-  const shown = q.trim() ? items.slice(0, 80) : items.slice(0, 36);
+  const shown = q.trim() || group !== "All" ? items.slice(0, 80) : items.slice(0, 36);
 
   const tvHits = useMemo(() => {
     const query = thingsQuery || q;
@@ -70,8 +70,8 @@ export function LibraryPanel() {
       <div>
         <h2 className="text-sm font-semibold text-fg">Open parts</h2>
         <p className="mt-1 text-sm text-muted">
-          Every shop class: gears, belts, shafts, rails, electronics. Stamp two pulleys, then Easy belt — the loop snaps to
-          whole teeth and follows the pulleys.
+          Every shop class: gears, belts, motors from 0603 whoops to a Vevor 48V 3000W MY1020D.
+          Stamp two pulleys, then Easy belt — the loop snaps to whole teeth and follows the pulleys.
         </p>
       </div>
       <div>
@@ -102,7 +102,7 @@ export function LibraryPanel() {
           if (libSource === "tv") setThingsQuery(e.target.value);
           else setQ(e.target.value);
         }}
-        placeholder={libSource === "tv" ? "Search Thingiverse, paste thing:16627…" : "Search 20T, GT2, 608, NEMA 17…"}
+        placeholder={libSource === "tv" ? "Search Thingiverse, paste thing:16627…" : "Search 2207, Vevor, GT2, 608, NEMA 17…"}
         aria-label="Search parts"
       />
       {libSource === "tv" ? (

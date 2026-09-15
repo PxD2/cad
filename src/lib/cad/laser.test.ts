@@ -71,6 +71,19 @@ describe("laser level", () => {
     assert.ok(holes.some((h) => Math.abs(h.x - 15.5) < 0.01 && Math.abs(h.y - 15.5) < 0.01));
   });
 
+  it("Vevor can lasers the shaft and the 4-bolt foot", () => {
+    const holes = holesOf({
+      ...defaultPart(),
+      holes: [],
+      solid: { kind: "motor", size: 5, od: 107, length: 135, bore: 12, t: 25, a: 56, b: 102, teeth: 11, pitch: 8 },
+      width: 107,
+      height: 171,
+      thick: 160,
+    });
+    assert.ok(holes.length >= 5);
+    assert.ok(holes.some((h) => h.d === 12 && h.x === 0));
+  });
+
   it("brush ghost still exposes the four plate lasers", () => {
     const hits = holeHits([brushInst(defaultPart())]);
     assert.equal(hits.length, 4);

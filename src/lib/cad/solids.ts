@@ -36,7 +36,7 @@ export function geometryForSolid(s: SolidSpec): BufferGeometry {
     case "knob":
       return knobGeo(s.od ?? 32, s.flutes ?? 8, s.height ?? 14, s.bore ?? 6);
     case "nema":
-      return nemaGeo((s.size as 8 | 11 | 14 | 17 | 23) || 17, s.t ?? 5);
+      return nemaGeo(s.size ?? 17, s.t ?? 5);
     case "compound":
       return compoundGeo(s.teeth ?? 20, s.teeth2 ?? 40, s.module ?? 2, s.bore ?? 5, s.t ?? 16);
     case "bevel":
@@ -157,6 +157,8 @@ export function geometryForSolid(s: SolidSpec): BufferGeometry {
       return arduinoGeo();
     case "planetary":
       return planetaryGeo(s.teeth ?? 12, s.teeth2 ?? 36, s.module ?? 1.5, s.t ?? 8);
+    case "motor":
+      return motorGeo(s);
     default:
       return spurGeo(12, 2, 5, 6);
   }
@@ -348,11 +350,9 @@ function knobGeo(od: number, flutes: number, h: number, bore: number): BufferGeo
   return lathe;
 }
 
-function nemaGeo(size: 8 | 11 | 14 | 17 | 23, t: number): BufferGeometry {
-  const w = size === 8 ? 20.4 : size === 11 ? 28.2 : size === 14 ? 35.2 : size === 23 ? 56.4 : 42.3;
-  const pattern = size === 8 ? 16 : size === 11 ? 23 : size === 14 ? 26 : size === 23 ? 47.14 : 31;
-  const bore = size === 8 ? 16 : size === 23 ? 38.1 : 22;
-  const hw = w / 2;
+function nemaGeo(size: number, t: number): BufferGeometry {
+  const d = nemaDims(size);
+  const hw = d.w / 2;
   const shape = new Shape([
     new Vector2(-hw, -hw),
     new Vector2(hw, -hw),
@@ -360,9 +360,9 @@ function nemaGeo(size: 8 | 11 | 14 | 17 | 23, t: number): BufferGeometry {
     new Vector2(-hw, hw),
   ]);
   const c = new Path();
-  c.absarc(0, 0, bore / 2, 0, Math.PI * 2, true);
+  c.absarc(0, 0, d.boss / 2, 0, Math.PI * 2, true);
   shape.holes.push(c);
-  const p = pattern / 2;
+  const p = d.pattern / 2;
   for (const [x, y] of [
     [-p, -p],
     [p, -p],
@@ -370,10 +370,21 @@ function nemaGeo(size: 8 | 11 | 14 | 17 | 23, t: number): BufferGeometry {
     [-p, p],
   ] as [number, number][]) {
     const h = new Path();
-    h.absarc(x, y, 1.7, 0, Math.PI * 2, true);
+    h.absarc(x, y, d.hole / 2, 0, Math.PI * 2, true);
     shape.holes.push(h);
   }
   return extrude(shape, t);
+}
+
+function nemaDims(size: number) {
+  if (size === 8) return { w: 20.4, pattern: 16, boss: 16, shaft: 4, hole: 2.2 };
+  if (size === 11) return { w: 28.2, pattern: 23, boss: 22, shaft: 5, hole: 2.5 };
+  if (size === 14) return { w: 35.2, pattern: 26, boss: 22, shaft: 5, hole: 2.5 };
+  if (size === 23) return { w: 56.4, pattern: 47.14, boss: 38.1, shaft: 6.35, hole: 5.2 };
+  if (size === 24) return { w: 60, pattern: 49.5, boss: 38.1, shaft: 8, hole: 5.2 };
+  if (size === 34) return { w: 86, pattern: 69.6, boss: 73, shaft: 14, hole: 5.5 };
+  if (size === 42) return { w: 110, pattern: 89, boss: 80, shaft: 19, hole: 6.6 };
+  return { w: 42.3, pattern: 31, boss: 22, shaft: 5, hole: 3.2 };
 }
 
 function compoundGeo(z1: number, z2: number, m: number, bore: number, t: number): BufferGeometry {
@@ -1078,6 +1089,184 @@ function planetaryGeo(sun: number, ring: number, m: number, t: number): BufferGe
   ringG.translate(0, t * 0.1, 0);
   return merge([sunG, ringG, ...planets]);
 }
+
+/** size: 1 outrunner, 2 inrunner, 3 brushed, 4 gearmotor, 5 EV can, 6 hub, 7 stepper body. */
+function motorGeo(s: SolidSpec): BufferGeometry {
+  const style = s.size ?? 1;
+  if (style === 2) return inrunnerGeo(s);
+  if (style === 3) return brushedGeo(s);
+  if (style === 4) return gearMotorGeo(s);
+  if (style === 5) return evCanGeo(s);
+  if (style === 6) return hubMotorGeo(s);
+  if (style === 7) return stepperBodyGeo(s);
+  return outrunnerGeo(s);
+}
+
+function outrunnerGeo(s: SolidSpec): BufferGeometry {
+  const od = s.od ?? 28;
+  const statorH = Math.max(3, s.teeth ?? 7);
+  const bellH = Math.max(statorH + 4, (s.length ?? statorH + 6) * 0.72);
+  const back = Math.max(2.2, (s.length ?? bellH + 4) - bellH);
+  const shaftD = s.bore ?? 4;
+  const shaftL = s.t ?? Math.max(8, od * 0.4);
+  const mount = s.a ?? Math.max(8, od * 0.55);
+  const bell = new CylinderGeometry(od / 2, od / 2, bellH, 28);
+  bell.translate(0, back + bellH / 2, 0);
+  const lip = new CylinderGeometry(od / 2 + 0.6, od / 2 + 0.6, 1.2, 28);
+  lip.translate(0, back + bellH - 0.6, 0);
+  const stator = new CylinderGeometry(od / 2 - 1.6, od / 2 - 1.6, statorH, 20);
+  stator.translate(0, back + statorH / 2 + 1, 0);
+  const plate = new CylinderGeometry(od / 2 - 0.4, od / 2 - 0.4, back, 24);
+  plate.translate(0, back / 2, 0);
+  const shaft = new CylinderGeometry(shaftD / 2, shaftD / 2, shaftL + 4, 16);
+  shaft.translate(0, back + bellH + shaftL / 2 - 2, 0);
+  const bosses: BufferGeometry[] = [];
+  const p = mount / 2;
+  const hole = od < 20 ? 1.1 : od < 32 ? 1.5 : 2;
+  for (const [x, z] of [
+    [-p, -p],
+    [p, -p],
+    [p, p],
+    [-p, p],
+  ] as [number, number][]) {
+    const b = new CylinderGeometry(hole + 0.8, hole + 0.8, back + 0.6, 10);
+    b.translate(x, back / 2, z);
+    bosses.push(b);
+  }
+  return merge([bell, lip, stator, plate, shaft, ...bosses]);
+}
+
+function inrunnerGeo(s: SolidSpec): BufferGeometry {
+  const od = s.od ?? 36;
+  const len = s.length ?? 50;
+  const shaftD = s.bore ?? 3.17;
+  const shaftL = s.t ?? 15;
+  const can = new CylinderGeometry(od / 2, od / 2, len, 28);
+  can.translate(0, len / 2, 0);
+  const front = new CylinderGeometry(od / 2 + 0.4, od / 2 * 0.55, 3, 24);
+  front.translate(0, len - 1, 0);
+  const shaft = new CylinderGeometry(shaftD / 2, shaftD / 2, shaftL + 6, 14);
+  shaft.translate(0, len + shaftL / 2 - 3, 0);
+  const col = new CylinderGeometry(od * 0.18, od * 0.18, 4, 12);
+  col.translate(0, len + 1, 0);
+  return merge([can, front, shaft, col]);
+}
+
+function brushedGeo(s: SolidSpec): BufferGeometry {
+  const od = s.od ?? 36;
+  const len = s.length ?? 50;
+  const shaftD = s.bore ?? 3.17;
+  const shaftL = s.t ?? 12;
+  const can = new CylinderGeometry(od / 2, od / 2, len * 0.82, 24);
+  can.translate(0, len * 0.41, 0);
+  const rear = new CylinderGeometry(od / 2 + 0.3, od / 2 + 0.3, len * 0.18, 20);
+  rear.translate(0, len * 0.91, 0);
+  const front = new CylinderGeometry(od / 2 * 0.55, od / 2 * 0.55, 3, 16);
+  front.translate(0, 1.5, 0);
+  const shaft = new CylinderGeometry(shaftD / 2, shaftD / 2, shaftL + 4, 14);
+  shaft.translate(0, -(shaftL / 2) + 2, 0);
+  const tabL = cubeBox(od * 0.12, 4, 6);
+  tabL.translate(-od / 2 - 1, len * 0.7, 0);
+  const tabR = cubeBox(od * 0.12, 4, 6);
+  tabR.translate(od / 2 + 1, len * 0.7, 0);
+  return merge([can, rear, front, shaft, tabL, tabR]);
+}
+
+function gearMotorGeo(s: SolidSpec): BufferGeometry {
+  const od = s.od ?? 12;
+  const canL = s.length ?? 15;
+  const boxW = s.a ?? 12;
+  const boxD = s.b ?? 10;
+  const boxH = s.height ?? 9;
+  const shaftD = s.bore ?? 3;
+  const shaftL = s.t ?? 10;
+  const can = new CylinderGeometry(od / 2, od / 2, canL, 18);
+  can.translate(0, boxH + canL / 2, 0);
+  const box = cubeBox(boxW, boxH, boxD);
+  const shaft = new CylinderGeometry(shaftD / 2, shaftD / 2, shaftL, 12);
+  shaft.rotateZ(Math.PI / 2);
+  shaft.translate(boxW / 2 + shaftL / 2 - 1, boxH * 0.45, 0);
+  return merge([can, box, shaft]);
+}
+
+function evCanGeo(s: SolidSpec): BufferGeometry {
+  const od = s.od ?? 107;
+  const len = s.length ?? 135;
+  const shaftD = s.bore ?? 12;
+  const shaftL = s.t ?? 25;
+  const footW = s.a ?? 56;
+  const footL = s.b ?? 102;
+  const can = new CylinderGeometry(od / 2, od / 2, len, 36);
+  can.translate(0, len / 2, 0);
+  const fins: BufferGeometry[] = [];
+  const n = 8;
+  for (let i = 0; i < n; i++) {
+    const ring = new CylinderGeometry(od / 2 + 1.4, od / 2 + 1.4, 2.2, 36);
+    ring.translate(0, 12 + i * ((len - 24) / (n - 1)), 0);
+    fins.push(ring);
+  }
+  const front = new CylinderGeometry(od / 2 * 0.42, od / 2 * 0.42, 8, 20);
+  front.translate(0, len - 2, 0);
+  const shaft = new CylinderGeometry(shaftD / 2, shaftD / 2, shaftL + 10, 16);
+  shaft.translate(0, len + shaftL / 2 - 4, 0);
+  const foot = cubeBox(footL, 8, footW);
+  foot.translate(0, 0, od / 2 + 4);
+  const sprocketZ = s.teeth ?? 11;
+  const sprocket = sprocketGeo(sprocketZ, s.pitch ?? 8, shaftD, 6);
+  sprocket.translate(0, len + shaftL - 4, 0);
+  return merge([can, front, shaft, foot, sprocket, ...fins]);
+}
+
+function hubMotorGeo(s: SolidSpec): BufferGeometry {
+  const od = s.od ?? 255;
+  const wide = s.length ?? 60;
+  const axle = s.bore ?? 12;
+  const tire = new CylinderGeometry(od / 2, od / 2, wide * 0.72, 40);
+  tire.translate(0, wide / 2, 0);
+  const shell = new CylinderGeometry(od / 2 - 14, od / 2 - 14, wide, 32);
+  shell.translate(0, wide / 2, 0);
+  const hub = new CylinderGeometry(od * 0.12, od * 0.12, wide + 8, 20);
+  hub.translate(0, wide / 2, 0);
+  const axleG = new CylinderGeometry(axle / 2, axle / 2, wide + 40, 14);
+  axleG.translate(0, wide / 2, 0);
+  const spokes: BufferGeometry[] = [];
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const sp = cubeBox(od * 0.32, wide * 0.18, wide * 0.08);
+    sp.translate(Math.cos(a) * od * 0.22, wide / 2, Math.sin(a) * od * 0.22);
+    sp.rotateY(-a);
+    spokes.push(sp);
+  }
+  return merge([tire, shell, hub, axleG, ...spokes]);
+}
+
+function stepperBodyGeo(s: SolidSpec): BufferGeometry {
+  const nema = s.od && s.od > 20 ? Math.round(s.od > 100 ? 42 : s.od > 80 ? 34 : s.od > 58 ? 24 : s.od > 50 ? 23 : s.od > 38 ? 17 : s.od > 30 ? 14 : s.od > 24 ? 11 : 8) : (s.a ?? 17);
+  const d = nemaDims(nema);
+  const len = s.length ?? 40;
+  const shaftL = s.t ?? 22;
+  const body = cubeBox(d.w, len, d.w);
+  const chamfer = new CylinderGeometry(d.w * 0.48, d.w * 0.48, len * 0.08, 24);
+  chamfer.translate(0, len * 0.04, 0);
+  const boss = new CylinderGeometry(d.boss / 2, d.boss / 2, 2.2, 24);
+  boss.translate(0, len + 1.1, 0);
+  const shaft = new CylinderGeometry(d.shaft / 2, d.shaft / 2, shaftL, 16);
+  shaft.translate(0, len + shaftL / 2, 0);
+  const screws: BufferGeometry[] = [];
+  const p = d.pattern / 2;
+  for (const [x, z] of [
+    [-p, -p],
+    [p, -p],
+    [p, p],
+    [-p, p],
+  ] as [number, number][]) {
+    const b = new CylinderGeometry(d.hole / 2 + 0.6, d.hole / 2 + 0.6, 3, 10);
+    b.translate(x, len + 0.4, z);
+    screws.push(b);
+  }
+  return merge([body, chamfer, boss, shaft, ...screws]);
+}
+
 
 
 

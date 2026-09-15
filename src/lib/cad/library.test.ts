@@ -7,6 +7,7 @@ import { nudgeTeeth, makeCompound } from "./tweak.ts";
 import { defaultPart } from "./types.ts";
 import { alignPlies, cleanCloud, occupancy, voxelDownsample } from "./scan.ts";
 import { demoDualScan } from "./scan-synth.ts";
+import { kitById } from "./kits.ts";
 
 describe("library", () => {
   it("ships a large unique catalog", () => {
@@ -24,10 +25,22 @@ describe("library", () => {
     assert.ok(libById("shaft-8-80"));
     assert.ok(libById("servo-sg90"));
     assert.ok(libById("helical-20"));
+    assert.ok(libById("vevor-48-3000"));
+    assert.ok(libById("motor-2207"));
+    assert.ok(libById("motor-0603"));
+    assert.ok(libById("motor-1103"));
+    assert.ok(libById("stepper-17-40"));
+    assert.ok(libById("hub-10-3000"));
     assert.ok(libMatch("608"));
+    assert.ok(libMatch("vevor 3000"));
+    assert.ok(libMatch("vevor 3000 watt 48 volt"));
+    assert.equal(libMatch("vevor 3000")?.id, "vevor-48-3000");
+    assert.equal(libMatch("smallest drone motor")?.id, "motor-0603");
+    assert.equal(libMatch("2207")?.id, "motor-2207");
     assert.ok(LIBRARY.some((x) => x.group === "Belts"));
     assert.ok(LIBRARY.some((x) => x.group === "Drive"));
     assert.ok(LIBRARY.some((x) => x.group === "Electronics"));
+    assert.ok(LIBRARY.filter((x) => x.group === "Motors").length >= 40);
   });
 
   it("drops a spur with a beni pragma", () => {
@@ -43,6 +56,43 @@ describe("library", () => {
     const env = envelopeOf({ kind: "spur", teeth: 20, module: 2, t: 8 });
     assert.equal(env.width, 44);
   });
+
+  it("Vevor 48V 3000W is a real MY1020D can", () => {
+    const item = libById("vevor-48-3000")!;
+    assert.equal(item.solid.kind, "motor");
+    assert.equal(item.solid.size, 5);
+    assert.equal(item.solid.od, 107);
+    assert.equal(item.solid.length, 135);
+    assert.equal(item.solid.bore, 12);
+    const env = envelopeOf(item.solid);
+    assert.ok(env.width >= 107);
+    assert.ok(env.thick >= 150);
+    const p = partFromLib(item);
+    assert.ok(p.holes.length >= 4);
+    assert.ok(p.holes.some((h) => h.d === 12));
+  });
+
+  it("drone 2207 is an outrunner with a 16 mm mount", () => {
+    const item = libById("motor-2207")!;
+    assert.equal(item.solid.kind, "motor");
+    assert.equal(item.solid.size, 1);
+    assert.ok(Math.abs((item.solid.od ?? 0) - 27.9) < 0.2);
+    assert.equal(item.solid.a, 16);
+    assert.equal(item.solid.bore, 4);
+    const p = partFromLib(item);
+    assert.ok(p.holes.length >= 5);
+  });
+
+  it("motor kits drop real cans on the tray", () => {
+    const vevor = kitById("vevor-kart")!.build();
+    assert.equal(vevor.instances[0].part.solid?.kind, "motor");
+    assert.equal(vevor.instances[0].part.solid?.od, 107);
+    const whoop = kitById("tiny-whoop")!.build();
+    assert.equal(whoop.instances.length, 3);
+    assert.equal(whoop.instances[0].part.solid?.kind, "motor");
+    const d = kitById("drone-2207")!.build();
+    assert.equal(d.instances[0].part.name, "motor-2207");
+  });
 });
 
 describe("voice shop", () => {
@@ -51,7 +101,11 @@ describe("voice shop", () => {
     assert.deepEqual(parseCommand("reduce teeth by 4"), { t: "teeth", delta: -4 });
     assert.deepEqual(parseCommand("set teeth to 30"), { t: "teeth", set: 30 });
     assert.equal(parseCommand("compound with 60").t, "compound");
-    assert.equal(parseCommand("make it herringbone").t, "kind");
+    assert.deepEqual(parseCommand("make it herringbone"), { t: "kind", kind: "herringbone" });
+    assert.equal(parseCommand("vevor 3000").t, "kit");
+    assert.equal(parseCommand("smallest drone motor").t, "kit");
+    const lib = parseCommand("2207");
+    assert.equal(lib.t, "lib");
   });
 
   it("nudges teeth on a plate by turning it into a spur", () => {

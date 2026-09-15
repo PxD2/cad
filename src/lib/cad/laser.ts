@@ -1,4 +1,5 @@
 import { sitOffsetY, wrapAngle, type Inst } from "./assembly.ts";
+import { holesForSolid } from "./library.ts";
 import type { Hole, Part } from "./types.ts";
 
 export const LASER_TOL = 0.45;
@@ -24,25 +25,13 @@ export type Vec3 = { x: number; y: number; z: number };
 /** Mounting / bore holes a laser can fire through. */
 export function holesOf(part: Part): Hole[] {
   const listed = part.holes.filter((h) => h.d > 0.2 && Number.isFinite(h.x) && Number.isFinite(h.y));
-  if (part.solid?.kind === "nema" && listed.length <= 1) return nemaHoles(part.solid.size ?? 17);
+  if (listed.length >= 2) return listed;
+  if (part.solid) {
+    const computed = holesForSolid(part.solid);
+    if (computed.length) return computed;
+  }
   if (listed.length) return listed;
-  if (part.solid?.bore) return [{ x: 0, y: 0, d: part.solid.bore }];
-  if (part.solid?.hole) return [{ x: 0, y: 0, d: part.solid.hole }];
-  if (part.solid?.id) return [{ x: 0, y: 0, d: part.solid.id }];
   return [];
-}
-
-function nemaHoles(size: number): Hole[] {
-  const pattern = size === 8 ? 16 : size === 11 ? 23 : size === 14 ? 26 : size === 23 ? 47.14 : 31;
-  const bore = size === 8 ? 16 : size === 23 ? 38.1 : 22;
-  const p = pattern / 2;
-  return [
-    { x: 0, y: 0, d: bore },
-    { x: -p, y: -p, d: 3.4 },
-    { x: p, y: -p, d: 3.4 },
-    { x: p, y: p, d: 3.4 },
-    { x: -p, y: p, d: 3.4 },
-  ];
 }
 
 /**

@@ -68,7 +68,8 @@ export type SolidKind =
   | "chain"
   | "battery"
   | "arduino"
-  | "planetary";
+  | "planetary"
+  | "motor";
 
 export const SOLID_KINDS: SolidKind[] = [
   "plate",
@@ -141,6 +142,7 @@ export const SOLID_KINDS: SolidKind[] = [
   "battery",
   "arduino",
   "planetary",
+  "motor",
 ];
 
 export type SolidSpec = {
@@ -233,8 +235,29 @@ export function envelopeOf(s: SolidSpec): { width: number; height: number; thick
   }
   if (s.kind === "nema") {
     const n = s.size ?? 17;
-    const w = n === 8 ? 20.4 : n === 11 ? 28.2 : n === 14 ? 35.2 : n === 23 ? 56.4 : 42.3;
+    const w =
+      n === 8 ? 20.4 : n === 11 ? 28.2 : n === 14 ? 35.2 : n === 23 ? 56.4 : n === 24 ? 60 : n === 34 ? 86 : n === 42 ? 110 : 42.3;
     return { width: w, height: w, thick: s.t ?? 5 };
+  }
+  if (s.kind === "motor") {
+    const style = s.size ?? 1;
+    const od = s.od ?? 28;
+    const shaft = s.t ?? (style === 6 ? 0 : 12);
+    const can = s.length ?? 20;
+    if (style === 6) return { width: od, height: od, thick: Math.max(can, 28) };
+    if (style === 7) {
+      const w = od;
+      return { width: w, height: w, thick: can + shaft };
+    }
+    if (style === 5) {
+      const footL = s.b ?? 102;
+      const footW = s.a ?? 56;
+      return { width: Math.max(od, footL), height: od + footW + 8, thick: can + shaft };
+    }
+    if (style === 4) {
+      return { width: Math.max(od, s.a ?? 12), height: Math.max(od, s.b ?? 10), thick: can + shaft };
+    }
+    return { width: od, height: od, thick: can + shaft };
   }
   if (s.kind === "tslot") {
     const a = s.a ?? 20;
