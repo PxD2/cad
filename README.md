@@ -1,9 +1,10 @@
-# PXD2
+# PXD2 — CAD v1
 
 Ask for a part. Reverse-engineering CAD that is meant to beat Fusion / SolidWorks
 for a child-simple shop workflow: stamp, stack, **belt**, scan, laser-align, print.
 
-**Run it:** [pxd2.github.io/cad](https://pxd2.github.io/cad/)  
+**Helix CAD (current workstation):** [pxd2.github.io/cad2](https://pxd2.github.io/cad2/)  
+**This app (v1 stamp/stack):** [pxd2.github.io/cad](https://pxd2.github.io/cad/)  
 **Source:** [github.com/PxD2/cad](https://github.com/PxD2/cad)
 
 The GitHub Pages host is the full program (Three.js tray, laser level, belt wraps,
