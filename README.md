@@ -3,6 +3,8 @@
 Ask for a part. Reverse-engineering CAD that is meant to beat Fusion / SolidWorks
 for a child-simple shop workflow: stamp, stack, **belt**, scan, laser-align, print.
 
+**Where it stands today:** a tested parametric part library (gears, belts, motors) with belt routing and export to STL, DXF, OpenSCAD, CadQuery, FreeCAD and Blender. It has no solid-modeling kernel yet (no booleans, no STEP), so for general solid modeling it complements Fusion / SolidWorks / FreeCAD rather than replacing them.
+
 **Helix CAD (current workstation):** [pxd2.github.io/cad2](https://pxd2.github.io/cad2/)  
 **This app (v1 stamp/stack):** [pxd2.github.io/cad](https://pxd2.github.io/cad/)  
 **Source:** [github.com/PxD2/cad](https://github.com/PxD2/cad)
